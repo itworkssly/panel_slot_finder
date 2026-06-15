@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel Slot Finder · Talent Ops take-home</title>
+<style>
+:root{
+  --bg:#15171c; --bg2:#1b1e25; --bg3:#22262f;
+  --ink:#e7e9ee; --mid:#a8acb8; --dim:#71757f;
+  --line:#2c313b; --line2:#3a4150;
+  --amber:#e0a83a; --amber-deep:#8a6010;
+  --teal:#4fb89a;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px;}
+a{color:var(--amber);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s;}
+a:hover{border-bottom-color:var(--amber);}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px;}
+
+/* hero */
+header.hero{padding:72px 0 40px;border-bottom:1px solid var(--line);}
+.eyebrow{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin:0 0 18px;}
+h1{font-size:2.35rem;line-height:1.12;margin:0 0 16px;font-weight:600;letter-spacing:-0.02em;}
+.lede{font-size:1.12rem;color:var(--mid);margin:0 0 28px;max-width:60ch;}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;}
+.chip{font-family:var(--mono);font-size:0.74rem;color:var(--mid);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;}
+.chip.live{color:var(--amber);border-color:var(--amber-deep);}
+
+/* sections */
+section{padding:52px 0;border-bottom:1px solid var(--line);}
+.sec-label{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin:0 0 6px;}
+h2{font-size:1.6rem;margin:0 0 10px;font-weight:600;letter-spacing:-0.01em;}
+h3{font-size:1.12rem;margin:30px 0 8px;font-weight:600;}
+p{margin:0 0 16px;color:var(--ink);}
+p.sub{color:var(--mid);}
+.q{color:var(--mid);font-size:1.02rem;max-width:62ch;}
+
+/* the four eval questions as the spine */
+.spine{list-style:none;padding:0;margin:24px 0 0;}
+.spine li{padding:14px 0 14px 0;border-top:1px solid var(--line);color:var(--mid);font-size:0.96rem;display:flex;gap:14px;}
+.spine li:last-child{border-bottom:1px solid var(--line);}
+.spine .n{font-family:var(--mono);font-size:0.78rem;color:var(--amber);flex-shrink:0;padding-top:2px;}
+
+/* diagram cards */
+.diagram{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin:24px 0;}
+.diagram svg{display:block;width:100%;height:auto;}
+.dcap{font-family:var(--mono);font-size:0.74rem;color:var(--dim);margin:14px 4px 0;line-height:1.5;}
+
+/* svg shared text */
+.svg-title{fill:var(--ink);font-family:var(--sans);font-size:14px;font-weight:600;}
+.svg-sub{fill:var(--mid);font-family:var(--mono);font-size:11px;}
+.svg-mid{fill:var(--mid);font-family:var(--sans);font-size:13px;}
+
+/* prototype callout */
+.proto{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:26px;margin:24px 0;}
+.proto-link{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:0.92rem;background:var(--bg3);border:1px solid var(--amber-deep);border-radius:8px;padding:11px 16px;margin-bottom:18px;}
+.proto-link .arr{color:var(--amber);}
+.note{background:var(--bg3);border-left:2px solid var(--amber);border-radius:0 6px 6px 0;padding:13px 16px;margin:18px 0;font-size:0.92rem;color:var(--mid);}
+.note b{color:var(--ink);font-weight:600;}
+
+/* build note */
+.bn-block{margin:0 0 26px;}
+.bn-q{font-size:1.02rem;font-weight:600;color:var(--ink);margin:0 0 6px;}
+.placeholder{background:repeating-linear-gradient(45deg,var(--bg2),var(--bg2) 10px,var(--bg3) 10px,var(--bg3) 20px);border:1px dashed var(--line2);border-radius:8px;padding:22px;margin:14px 0;text-align:center;}
+.placeholder .pt{font-family:var(--mono);font-size:0.8rem;color:var(--amber);text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;}
+.placeholder .pd{font-size:0.9rem;color:var(--mid);margin:0;}
+.prompt{font-family:var(--mono);font-size:0.84rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:12px 0;color:var(--mid);white-space:pre-wrap;line-height:1.55;}
+.prompt .who{color:var(--amber);font-weight:600;}
+
+ul.clean{padding-left:20px;color:var(--ink);}
+ul.clean li{margin:0 0 8px;}
+ul.clean li::marker{color:var(--amber);}
+
+footer{padding:40px 0 80px;color:var(--dim);font-family:var(--mono);font-size:0.78rem;}
+
+@media (max-width:600px){
+  h1{font-size:1.8rem;} .wrap{padding:0 18px;} header.hero{padding:48px 0 32px;} section{padding:38px 0;}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Talent Ops take-home · AI Enablement Lead</p>
+    <h1>Panel Slot Finder</h1>
+    <p class="lede">Scheduling a multi-interviewer panel takes a coordinator one to two hours of email back-and-forth and timezone math. I built the one piece that removes most of that: a tool that reads messy availability and reconciles it against who is trained, who has capacity, and when the candidate is free, in one pass.</p>
+    <div class="meta-row">
+      <span class="chip live">Live prototype</span>
+      <span class="chip">Single-file HTML / JS</span>
+      <span class="chip">Parsing on the Claude API</span>
+      <span class="chip">Built in ~2 hours</span>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <p class="sec-label">The problem</p>
+    <h2>Where the time goes</h2>
+    <p class="q">The team runs an ATS with basic scheduling. It handles a single-interviewer screen fine and breaks the moment a panel needs three people in one block. Every panel routes through one coordinator, by hand, over email. At 25 open roles in a sprint, scheduling alone is what makes the sprint miss its deadline.</p>
+    <p class="sub">I read the problem as four failures that all share one root cause:</p>
+    <ul class="spine">
+      <li><span class="n">01</span><span>Availability arrives as free text in email and Slack, so a human reads and re-keys it every time.</span></li>
+      <li><span class="n">02</span><span>Conflicts and double-books are caught late, because nobody checks every constraint at once.</span></li>
+      <li><span class="n">03</span><span>Coverage gets cut under time pressure: a slot gets filled by whoever is free, trained or not.</span></li>
+      <li><span class="n">04</span><span>A reschedule means starting the whole panel over from scratch.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="map">
+  <div class="wrap">
+    <p class="sec-label">Part 1 · Workflow map</p>
+    <h2>The full flow, and the piece I built</h2>
+    <p class="sub">From the moment a candidate is ready to schedule through to the confirmed panel written back to the ATS. Amber steps are manual today. The teal step is the one I built, because every other step depends on getting it right.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 700 540" role="img" aria-label="Workflow from candidate ready to confirmed in the ATS, with manual steps in amber and the built reconcile step in teal.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#71757f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
+
+        <rect x="210" y="24" width="280" height="54" rx="9" fill="#22262f" stroke="#3a4150" stroke-width="1"/>
+        <text class="svg-title" x="350" y="46" text-anchor="middle">Candidate ready to schedule</text>
+        <text class="svg-sub" x="350" y="65" text-anchor="middle">passed the screen, panel needed</text>
+        <line x1="350" y1="78" x2="350" y2="104" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="210" y="106" width="280" height="54" rx="9" fill="#2a2114" stroke="#8a6010" stroke-width="1"/>
+        <text class="svg-title" x="350" y="128" text-anchor="middle">Collect interviewer availability</text>
+        <text class="svg-sub" x="350" y="147" text-anchor="middle">emails, Slack, free-text replies</text>
+        <line x1="350" y1="160" x2="350" y2="186" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="150" y="188" width="400" height="62" rx="9" fill="#15302a" stroke="#4fb89a" stroke-width="1.5"/>
+        <text class="svg-title" x="350" y="212" text-anchor="middle" style="fill:#7fd4ba;">Reconcile times, pools, candidate window</text>
+        <text class="svg-sub" x="350" y="231" text-anchor="middle" style="fill:#4fb89a;">the piece I built, every constraint at once</text>
+        <line x1="350" y1="250" x2="350" y2="276" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="210" y="278" width="280" height="54" rx="9" fill="#2a2114" stroke="#8a6010" stroke-width="1"/>
+        <text class="svg-title" x="350" y="300" text-anchor="middle">Sequence the loop</text>
+        <text class="svg-sub" x="350" y="319" text-anchor="middle">order, durations, buffers between</text>
+        <line x1="350" y1="332" x2="350" y2="358" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="190" y="360" width="320" height="62" rx="9" fill="#22262f" stroke="#3a4150" stroke-width="1"/>
+        <text class="svg-title" x="350" y="384" text-anchor="middle">Confirm and write back to the ATS</text>
+        <text class="svg-sub" x="350" y="403" text-anchor="middle">invites + ATS record (simulated in prototype)</text>
+
+        <line x1="60" y1="470" x2="640" y2="470" stroke="#2c313b" stroke-width="1"/>
+        <rect x="60" y="486" width="14" height="14" rx="3" fill="#2a2114" stroke="#8a6010"/>
+        <text class="svg-mid" x="84" y="497">Manual today, done by hand over email</text>
+        <rect x="380" y="486" width="14" height="14" rx="3" fill="#15302a" stroke="#4fb89a"/>
+        <text class="svg-mid" x="404" y="497">The piece I built</text>
+      </svg>
+      <p class="dcap">Late conflicts, reschedules, cut corners on coverage: they all trace back to one thing, reconciling by hand. Fix the reconcile and the steps around it get faster on their own.</p>
+    </div>
+
+    <h3>Why the input does not need to be clean</h3>
+    <p class="sub">People answer availability in plain language. So the tool reads plain language. A coordinator pastes whatever came back, in whatever shape it arrived, and the parse turns it into time blocks the scheduler can use. This is the reason AI sits on this step where a structured form would fail.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 700 320" role="img" aria-label="Email, Slack, and free-text replies all feed one parse step that outputs clean time blocks.">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#71757f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
+        <rect x="40" y="24" width="186" height="56" rx="9" fill="#2a2114" stroke="#8a6010"/>
+        <text class="svg-title" x="133" y="46" text-anchor="middle">Email replies</text>
+        <text class="svg-sub" x="133" y="65" text-anchor="middle">"Tues after 2 works"</text>
+        <rect x="257" y="24" width="186" height="56" rx="9" fill="#2a2114" stroke="#8a6010"/>
+        <text class="svg-title" x="350" y="46" text-anchor="middle">Slack messages</text>
+        <text class="svg-sub" x="350" y="65" text-anchor="middle">"any morning but Fri"</text>
+        <rect x="474" y="24" width="186" height="56" rx="9" fill="#2a2114" stroke="#8a6010"/>
+        <text class="svg-title" x="567" y="46" text-anchor="middle">Free-text notes</text>
+        <text class="svg-sub" x="567" y="65" text-anchor="middle">"booked til Weds"</text>
+
+        <path d="M133 80 L133 116 L350 116" fill="none" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar2)"/>
+        <path d="M350 80 L350 122" fill="none" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar2)"/>
+        <path d="M567 80 L567 116 L350 116" fill="none" stroke="#71757f" stroke-width="1.5"/>
+
+        <rect x="190" y="124" width="320" height="60" rx="9" fill="#15302a" stroke="#4fb89a" stroke-width="1.5"/>
+        <text class="svg-title" x="350" y="148" text-anchor="middle" style="fill:#7fd4ba;">Paste it in, the tool parses it</text>
+        <text class="svg-sub" x="350" y="167" text-anchor="middle" style="fill:#4fb89a;">no form, no format, no cleanup</text>
+        <line x1="350" y1="184" x2="350" y2="212" stroke="#71757f" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <rect x="210" y="214" width="280" height="54" rx="9" fill="#22262f" stroke="#3a4150"/>
+        <text class="svg-title" x="350" y="236" text-anchor="middle">Clean time blocks</text>
+        <text class="svg-sub" x="350" y="255" text-anchor="middle">ready for the scheduler</text>
+      </svg>
+      <p class="dcap">AI does the reading. Deterministic code does the scheduling math. Each tool does the job it is actually good at.</p>
+    </div>
+  </div>
+</section>
+
+<section id="prototype">
+  <div class="wrap">
+    <p class="sec-label">Part 2 · Prototype</p>
+    <h2>What I built and how to run it</h2>
+    <div class="proto">
+      <a class="proto-link" href="https://itworkssly.github.io/panel_slot_finder/"><span>Open the live tool</span><span class="arr">&rarr;</span></a>
+      <p class="sub">Two views. The scheduler reads pasted availability, reconciles it against the trained-interviewer pools and the candidate's hours, sequences the loop with buffers, and produces a confirmed panel plus the ATS write-back. The sprint dashboard sits on top of a sample of 25 active reqs and shows what the reconciliation captures across a whole sprint: coordinator hours saved, coverage held, and which interviewer pool is getting stretched thin.</p>
+      <div class="note">
+        <b>What is real and what is simulated.</b> The parse and the scheduling math are real. Demo mode runs on baked scenarios so the tool works without an API key. Live parse mode makes a real Claude API call against text you paste, using your own key. The calendar pull and the ATS write-back are simulated, the write-back shows the exact payload it would send. I built it this way so a reviewer can see it work without setting anything up.
+      </div>
+      <h3>The decision I am most willing to defend</h3>
+      <p class="sub">I did not try to build a scheduler. The ATS already schedules. I built the reconciliation and coverage engine, the piece the ATS does badly, and I made one rule non-negotiable: the tool never fills an interview with someone untrained for it. When no trained person is free in the candidate's window, it routes the decision to train-or-override instead of faking coverage. That rule is the difference between a faster booking tool and a tool that protects interview quality under time pressure.</p>
+    </div>
+  </div>
+</section>
+
+<section id="buildnote">
+  <div class="wrap">
+    <p class="sec-label">AI usage &amp; build note</p>
+    <h2>How I worked with AI on this</h2>
+
+    <div class="bn-block">
+      <p class="bn-q">Which tools, and what I used them for</p>
+      <p class="sub">I worked in a structured Claude project I maintain for this kind of work, with a set of specialist review personas I have built up over time. I used the architect persona for code audits on the single-file app, and editor and hiring-manager lenses to catch where my own framing was overreaching. Claude wrote and revised the HTML and JS; I drove the decisions, ran the build, and tested it. The parsing step is built to run on the Claude API.</p>
+    </div>
+
+    <div class="bn-block">
+      <p class="bn-q">The most important decision: what I left out</p>
+      <p class="sub">I left out building a scheduler from scratch, full timezone support for every interviewer, a candidate-facing view, and drag-to-reorder. I named those as next steps rather than half-building them. The thing I kept was the reconciliation-plus-coverage core and the train-or-override rule. Scoping to the one high-leverage piece, and being able to say what I deliberately did not build, mattered more than feature count.</p>
+    </div>
+
+    <div class="bn-block">
+      <p class="bn-q">Prompts that shaped the build</p>
+      <p class="sub">Two of the prompts that produced the biggest changes, lightly trimmed:</p>
+
+      <div class="placeholder">
+        <p class="pt">Screenshot 1, paste here</p>
+        <p class="pd">A real prompt or exchange that produced a breakthrough. The volume-model correction is a strong candidate, see the example below for the shape.</p>
+      </div>
+
+      <div class="prompt"><span class="who">Me:</span> hold on, we are not thinking about this correctly in terms of volume. one hire per interview round undercounts it. a sprint is 25 active reqs, each pushing several candidates through a panel. rebuild the dashboard on real funnel volume, not 25 panels.</div>
+
+      <div class="placeholder">
+        <p class="pt">Screenshot 2, paste here</p>
+        <p class="pd">A prompt that required the most iteration. The metric-selection back-and-forth (cutting time-to-schedule, choosing hours-saved and coverage) is a strong candidate.</p>
+      </div>
+    </div>
+
+    <div class="bn-block">
+      <p class="bn-q">How I validated the AI's output</p>
+      <p class="sub">I did not trust the generated numbers on sight. Every dashboard figure is computed from the seeded sprint by the same logic the scheduler runs, so I could re-run it and check it held together. I ran the volume model against published recruiting-funnel benchmarks rather than guessing, and I pushed back when a metric did not measure what it claimed. The reschedule rate, for example, I dialed to a healthy 15% once I checked what healthy looks like.</p>
+    </div>
+
+    <div class="bn-block">
+      <p class="bn-q">One thing that did not work, and how I fixed it</p>
+      <p class="sub">My first dashboard measured time-to-schedule and modeled the sprint as 25 panels. Both were wrong. Time-to-schedule mostly measures how full calendars are, not anything the tool controls, so it overstated the tool's effect. And 25 panels badly undercounted the real volume of a 25-req sprint. I caught it, rebuilt the volume model from funnel benchmarks (about 75 panels, 225 interviews), and replaced the weak metric with coordinator hours saved and coverage, the two things the tool actually drives. Volunteering that weakness is, I think, a better signal than hiding it.</p>
+    </div>
+
+    <div class="bn-block">
+      <p class="bn-q">What I would do next with another hour</p>
+      <ul class="clean">
+        <li>Full timezone support, with each interviewer's home zone pulled from their calendar.</li>
+        <li>A candidate-facing view so they can see their day and flag a conflict before the panel locks.</li>
+        <li>A live ATS write-back against a real Ashby sandbox, replacing the simulated payload.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Panel Slot Finder · prepared for the Talent Operations AI Enablement Lead session.
+  </div>
+</footer>
+
+</body>
+</html>
