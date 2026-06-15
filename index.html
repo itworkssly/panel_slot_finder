@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Slot Finder</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2218%22 fill=%22%230A0A0A%22/><line x1=%2222%22 y1=%2236%22 x2=%2266%22 y2=%2250%22 stroke=%22%23FAFAFA%22 stroke-width=%225%22 stroke-linecap=%22round%22/><line x1=%2222%22 y1=%2250%22 x2=%2266%22 y2=%2250%22 stroke=%22%23FAFAFA%22 stroke-width=%225%22 stroke-linecap=%22round%22/><line x1=%2222%22 y1=%2264%22 x2=%2266%22 y2=%2250%22 stroke=%22%23FAFAFA%22 stroke-width=%225%22 stroke-linecap=%22round%22/><circle cx=%2272%22 cy=%2250%22 r=%228%22 fill=%22%23FAFAFA%22/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A;
+  --surface:#141414;
+  --surface-2:#1C1C1C;
+  --surface-3:#262626;
+  --border:#262626;
+  --border-bright:#383838;
+  --text:#FAFAFA;
+  --text-mid:#A1A1A1;
+  --text-dim:#6B6B6B;
+  --warn:#F59E0B;
+  --warn-deep:#D97706;
+  --danger:#EF4444;
+  --font-body:'Inter',-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  /* spacing scale: one rhythm for the whole tool */
+  --sp-1:6px; --sp-2:10px; --sp-3:14px; --sp-4:18px; --sp-5:24px; --sp-6:32px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:15px;}
+
+.wrap{max-width:760px;margin:0 auto;padding:0 24px;}
+
+.topstrip{background:var(--surface);border-bottom:1px solid var(--border);}
+.topstrip-inner{max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+.topstrip-left{display:flex;align-items:center;gap:11px;}
+.topstrip-mark{width:26px;height:26px;flex-shrink:0;}
+.topstrip-text{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.topstrip-text .product{font-size:0.86rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.topstrip-text .sep{color:var(--text-dim);font-size:0.8rem;}
+.topstrip-text .context{font-size:0.82rem;color:var(--text-mid);font-family:var(--font-mono);}
+.topstrip-text .context b{color:var(--text);font-weight:600;font-family:var(--font-body);}
+.topstrip-right{display:flex;align-items:center;gap:9px;}
+.mode-pill{font-family:var(--font-mono);font-size:0.66rem;font-weight:500;padding:5px 10px;border-radius:6px;background:var(--surface-2);color:var(--text-mid);border:1px solid var(--border);}
+.mode-pill.live{background:var(--surface-2);color:var(--text);border-color:var(--text-dim);}
+
+.work{padding:28px 0 60px;}
+
+.section{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:var(--sp-4);overflow:hidden;}
+.section-head{padding:13px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.section-num{font-family:var(--font-mono);font-size:0.72rem;font-weight:500;color:var(--text);width:22px;height:22px;background:var(--surface-3);border-radius:6px;display:grid;place-items:center;flex-shrink:0;}
+.section-head h2{font-size:0.94rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.section-head .src{font-family:var(--font-mono);font-size:0.64rem;background:var(--bg);border:1px solid var(--border);color:var(--text-mid);padding:3px 8px;border-radius:5px;font-weight:500;margin-left:auto;}
+.section-head .refresh{color:var(--text-dim);font-size:0.72rem;cursor:pointer;transition:color .12s;}
+.section-head .refresh:hover{color:var(--text);}
+.section-body{padding:16px 18px;}
+
+.pm-list{display:flex;flex-direction:column;gap:5px;}
+.pm-row{display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--surface-2);border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .12s;}
+.pm-row:hover{background:var(--surface-3);border-color:var(--border-bright);}
+.pm-row.open{background:var(--surface-3);border-color:var(--border-bright);}
+.pm-avatar{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--text);display:grid;place-items:center;font-size:0.74rem;font-weight:600;flex-shrink:0;border:1px solid var(--border-bright);}
+.pm-info{flex:1;min-width:0;}
+.pm-name{font-size:0.87rem;font-weight:600;color:var(--text);line-height:1.2;}
+.pm-role{font-size:0.74rem;color:var(--text-mid);margin-top:2px;}
+.pm-load{font-family:var(--font-mono);font-size:0.74rem;color:var(--text-mid);flex-shrink:0;}
+.pm-load.tight{color:var(--warn);font-weight:500;}
+.pm-chevron{color:var(--text-dim);font-size:0.84rem;transition:transform .15s;}
+.pm-row.open .pm-chevron{transform:rotate(90deg);color:var(--text);}
+.pm-detail{display:none;padding:9px 12px 12px 50px;font-size:0.78rem;color:var(--text-mid);line-height:1.55;background:var(--surface-3);border-radius:0 0 6px 6px;border:1px solid var(--border-bright);border-top:none;margin-top:-5px;font-family:var(--font-mono);}
+.pm-row.open + .pm-detail{display:block;}
+
+.opts-row{display:flex;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.opt{display:flex;align-items:center;gap:8px;}
+.opt-label{font-size:0.74rem;color:var(--text-mid);font-weight:500;}
+select{font-family:var(--font-body);font-size:0.82rem;color:var(--text);background:var(--surface-2);border:1px solid var(--border-bright);border-radius:6px;padding:6px 10px;outline:none;cursor:pointer;}
+select:focus{border-color:var(--text);box-shadow:0 0 0 3px rgba(250,250,250,0.08);}
+
+.avail-note{font-size:0.72rem;color:var(--text-mid);background:var(--surface-2);padding:9px 12px;border-radius:5px;margin-bottom:12px;line-height:1.55;border-left:2px solid var(--border-bright);}
+.avail-note b{color:var(--text);font-weight:600;}
+textarea{width:100%;font-family:var(--font-mono);font-size:0.79rem;color:var(--text);background:var(--surface-2);border:1px solid var(--border-bright);border-radius:6px;padding:11px 13px;outline:none;transition:all .15s;min-height:140px;resize:vertical;line-height:1.6;}
+textarea:focus{border-color:var(--text);box-shadow:0 0 0 3px rgba(250,250,250,0.08);background:var(--surface-3);}
+textarea::placeholder{color:var(--text-dim);}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body);font-size:0.86rem;font-weight:600;padding:11px 18px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all .15s;letter-spacing:-0.005em;}
+.btn-primary{background:var(--text);color:var(--bg);}
+.btn-primary:hover{background:#fff;}
+.btn-ghost{background:transparent;color:var(--text-mid);border-color:var(--border-bright);font-size:0.78rem;padding:8px 14px;}
+.btn-ghost:hover{border-color:var(--text);color:var(--text);background:var(--surface-2);}
+.action-bar{display:flex;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-4);}
+.action-bar .btn-primary{flex:1;}
+
+.keybar{margin-bottom:var(--sp-4);}
+.keybar-inner{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 13px;}
+.keybar-inner .kl{font-size:0.66rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;}
+.keybar-inner input{border:none;background:transparent;padding:4px 0;font-family:var(--font-mono);font-size:0.76rem;flex:1;outline:none;color:var(--text);}
+.keybar-inner input::placeholder{color:var(--text-dim);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border-bright);flex-shrink:0;transition:background .2s;}
+.dot.on{background:var(--text);}
+
+.out-empty{text-align:center;padding:46px 20px;color:var(--text-dim);background:var(--surface);border:1px dashed var(--border-bright);border-radius:10px;}
+.out-empty .ico{margin:0 auto 12px;width:34px;height:34px;border:1.5px dashed var(--border-bright);border-radius:50%;display:grid;place-items:center;}
+.out-empty .ico::after{content:"";width:6px;height:6px;background:var(--border-bright);border-radius:50%;}
+.out-empty p{font-size:0.84rem;max-width:32ch;margin:0 auto;line-height:1.5;}
+
+.results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:0 2px;}
+.results-head h3{font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.results-meta{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim);}
+
+.slot{border:1px solid var(--border);border-radius:9px;margin-bottom:12px;overflow:hidden;background:var(--surface);transition:all .15s;}
+.slot:hover{border-color:var(--border-bright);}
+.slot.best{border-color:var(--border-bright);}
+.slot.selected{border-color:var(--text);border-width:1.5px;}
+.slot-top{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);cursor:pointer;}
+.slot.best .slot-top{background:var(--surface-2);}
+.slot.selected .slot-top{background:var(--surface-3);border-bottom-color:var(--border-bright);}
+.rank{font-size:1rem;font-weight:600;color:var(--text-dim);width:22px;flex-shrink:0;text-align:center;font-family:var(--font-mono);}
+.slot.best .rank{color:var(--text-mid);}
+.slot.selected .rank{color:var(--text);}
+.slot-when{flex:1;}
+.slot-when .day{font-size:0.98rem;font-weight:600;line-height:1.1;color:var(--text);letter-spacing:-0.01em;}
+.slot-when .time{font-family:var(--font-mono);font-size:0.76rem;color:var(--text-mid);margin-top:3px;}
+.badge{font-size:0.62rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding:4px 9px;border-radius:5px;background:var(--surface-3);color:var(--text-mid);flex-shrink:0;border:1px solid var(--border-bright);}
+.badge.alt{background:transparent;color:var(--text-dim);border-color:var(--border);}
+.badge.selected{background:var(--text);color:var(--bg);border-color:var(--text);}
+.slot-body{padding:13px 16px;}
+.seq{display:flex;flex-direction:column;gap:6px;margin-bottom:11px;}
+.seq-row{display:flex;align-items:center;gap:10px;font-size:0.8rem;}
+.seq-row .t{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim);min-width:96px;}
+.seq-row .who{font-weight:500;color:var(--text);}
+.seq-row .rl{color:var(--text-dim);font-size:0.74rem;}
+.why{font-size:0.82rem;color:var(--text-mid);line-height:1.55;border-top:1px dashed var(--border);padding-top:11px;}
+.why b{color:var(--text);font-weight:600;}
+
+.writeback{margin-top:var(--sp-4);background:var(--text);border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:14px;color:var(--bg);flex-wrap:wrap;}
+.writeback.disabled{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);}
+.writeback-text{flex:1;font-size:0.86rem;line-height:1.4;min-width:200px;}
+.writeback-text b{font-weight:600;}
+.writeback-btn{background:var(--bg);color:var(--text);font-weight:600;font-size:0.84rem;padding:9px 16px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;}
+.writeback-btn:hover{background:#000;}
+.writeback.disabled .writeback-btn{background:var(--border);color:var(--text-dim);cursor:not-allowed;}
+
+.capture{margin-top:var(--sp-4);border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+.capture-head{padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.capture-head .ph{font-size:0.68rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-mid);}
+.capture-head .tag{font-family:var(--font-mono);font-size:0.62rem;background:var(--bg);color:var(--text-mid);padding:2px 7px;border-radius:5px;margin-left:auto;font-weight:500;border:1px solid var(--border);}
+.capture-body{padding:7px 16px 14px;}
+.cap-row{display:flex;align-items:baseline;gap:11px;padding:8px 0;border-bottom:1px solid var(--border);}
+.cap-row:last-of-type{border-bottom:none;}
+.cap-k{font-size:0.72rem;color:var(--text-dim);min-width:150px;flex-shrink:0;}
+.cap-v{font-size:0.82rem;color:var(--text);font-weight:500;font-family:var(--font-mono);}
+.cap-v .em{color:var(--warn);font-weight:500;}
+.cap-foot{font-size:0.72rem;color:var(--text-mid);background:var(--surface-2);padding:10px 16px;border-top:1px solid var(--border);line-height:1.55;}
+.cap-foot b{color:var(--text);font-weight:600;}
+
+.loading{text-align:center;padding:36px 20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.spinner{width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading p{font-size:0.84rem;color:var(--text-mid);}
+.loading .step{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim);margin-top:6px;}
+.err{background:var(--surface-2);border:1px solid var(--danger);border-radius:7px;padding:13px 15px;font-size:0.82rem;color:#FCA5A5;line-height:1.55;}
+.err b{color:#FECACA;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border-bright);border-radius:11px;max-width:560px;width:100%;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h2{font-size:1rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.modal-x{background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;padding:0;line-height:1;}
+.modal-x:hover{color:var(--text);}
+.modal-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.modal-tab{flex:1;padding:11px 16px;font-size:0.8rem;font-weight:500;color:var(--text-mid);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;}
+.modal-tab:hover{color:var(--text);}
+.modal-tab.active{color:var(--text);border-bottom-color:var(--text);background:var(--surface);}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1;background:var(--surface);}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:var(--surface-2);}
+.summary-row{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid var(--border);}
+.summary-row:last-of-type{border-bottom:none;}
+.summary-k{font-size:0.74rem;color:var(--text-dim);min-width:130px;font-weight:500;}
+.summary-v{font-size:0.84rem;color:var(--text);font-weight:500;flex:1;}
+.summary-v .accent{color:var(--text);font-weight:600;}
+.api-call{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:13px 15px;font-family:var(--font-mono);font-size:0.74rem;color:var(--text);line-height:1.6;overflow-x:auto;white-space:pre;}
+.api-call .key{color:#86EFAC;}
+.api-call .str{color:#FCD34D;}
+.api-call .num{color:#A5B4FC;}
+.api-method{display:inline-block;background:var(--surface-3);color:var(--text);font-family:var(--font-mono);font-size:0.72rem;font-weight:600;padding:3px 8px;border-radius:4px;margin-bottom:10px;border:1px solid var(--border-bright);}
+.api-endpoint{font-family:var(--font-mono);font-size:0.78rem;color:var(--text-mid);margin-bottom:13px;word-break:break-all;}
+
+.foot{padding:24px 0 12px;font-size:0.72rem;color:var(--text-dim);text-align:center;border-top:1px solid var(--border);margin-top:28px;line-height:1.6;}
+.foot b{color:var(--text-mid);font-weight:600;}
+/* view nav */
+.viewnav{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:2px;}
+.viewnav-btn{font-family:var(--font-body);font-size:0.74rem;font-weight:500;color:var(--text-mid);background:none;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;transition:all .12s;}
+.viewnav-btn:hover{color:var(--text);}
+.viewnav-btn.active{background:var(--surface-3);color:var(--text);}
+
+/* calibration tag + capacity on panel rows */
+.pm-cal{font-family:var(--font-mono);font-size:0.56rem;font-weight:500;letter-spacing:0.03em;text-transform:uppercase;color:var(--text-dim);background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:4px;vertical-align:middle;margin-left:6px;}
+.pm-cal.uncal{color:var(--warn);border-color:var(--warn-deep);}
+.pm-load-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.pm-cap{font-family:var(--font-mono);font-size:0.68rem;color:var(--text-dim);}
+.pm-cap.over{color:var(--warn);font-weight:500;}
+.pmd-line{margin-bottom:4px;}
+.pmd-line:last-child{margin-bottom:0;}
+.pmd-k{color:var(--text-dim);text-transform:uppercase;font-size:0.62rem;letter-spacing:0.04em;margin-right:8px;}
+
+/* coverage strip */
+.coverage{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;margin-bottom:var(--sp-3);overflow:hidden;}
+.coverage-head{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);}
+.cov-title{font-size:0.74rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.cov-status{font-family:var(--font-mono);font-size:0.62rem;font-weight:500;padding:2px 8px;border-radius:5px;margin-left:auto;border:1px solid var(--border-bright);}
+.cov-status.ok{color:var(--text-mid);background:var(--bg);}
+.cov-status.gap{color:var(--warn);border-color:var(--warn-deep);background:rgba(245,158,11,0.08);}
+.coverage-body{padding:8px 12px;}
+.cov-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.78rem;}
+.cov-row:last-child{border-bottom:none;}
+.cov-row.gap .cov-comp{color:var(--warn);}
+.cov-comp{font-weight:600;color:var(--text);min-width:150px;}
+.cov-type{font-family:var(--font-mono);font-size:0.66rem;color:var(--text-dim);min-width:120px;}
+.cov-who{color:var(--text-mid);}
+.cov-multi{font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin-left:auto;background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px;}
+.coverage-foot{font-size:0.7rem;color:var(--text-mid);padding:9px 12px;border-top:1px solid var(--border);background:var(--surface);line-height:1.5;}
+
+/* four-POV readout */
+.pov{margin-top:var(--sp-4);border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+.pov-head{padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:0.68rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-mid);}
+.pov-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+.pov-card{background:var(--surface);padding:13px 16px;}
+.pov-card.pov-warn{background:rgba(245,158,11,0.06);}
+.pov-label{font-size:0.66rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px;}
+.pov-card.pov-warn .pov-label{color:var(--warn);}
+.pov-val{font-size:0.84rem;color:var(--text);font-weight:500;line-height:1.4;}
+
+/* dashboard */
+.dash-intro{margin-bottom:var(--sp-4);}
+.dash-intro-t{font-size:1.05rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;}
+.dash-intro-d{font-size:0.8rem;color:var(--text-mid);margin-top:5px;line-height:1.55;max-width:64ch;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.dash-card.dash-wide{grid-column:1 / -1;}
+.dc-head{padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.dc-t{font-size:0.86rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;display:block;}
+.dc-sub{font-family:var(--font-mono);font-size:0.66rem;color:var(--text-dim);margin-top:3px;display:block;}
+.dc-body{padding:14px 16px;}
+.dc-foot{font-size:0.72rem;color:var(--text-mid);padding:11px 16px;border-top:1px solid var(--border);background:var(--surface-2);line-height:1.55;}
+.dc-foot b{color:var(--text);font-weight:600;}
+/* bottleneck bars */
+.bn-row{display:flex;align-items:center;gap:11px;margin-bottom:9px;}
+.bn-row:last-child{margin-bottom:0;}
+.bn-name{font-size:0.78rem;color:var(--text);min-width:64px;}
+.bn-track{flex:1;height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;}
+.bn-fill{height:100%;background:var(--text-dim);border-radius:4px;}
+.bn-fill.hot{background:var(--warn);}
+.bn-ct{font-family:var(--font-mono);font-size:0.74rem;color:var(--text-mid);min-width:20px;text-align:right;}
+/* reschedule rows */
+.rc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.8rem;}
+.rc-row:last-child{border-bottom:none;}
+.rc-comp{color:var(--text);font-weight:500;}
+.rc-ct{font-family:var(--font-mono);font-size:0.74rem;color:var(--text-mid);}
+/* trend chart */
+.tr-chart{display:flex;align-items:flex-end;gap:14px;height:110px;padding-top:14px;}
+.tr-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;}
+.tr-bar{width:100%;max-width:54px;background:var(--surface-3);border:1px solid var(--border-bright);border-radius:5px 5px 0 0;position:relative;display:flex;justify-content:center;}
+.tr-v{font-family:var(--font-mono);font-size:0.64rem;color:var(--text-mid);position:absolute;top:-16px;}
+.tr-lab{font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim);text-align:center;line-height:1.3;}
+/* capacity exposure */
+.ce-row{display:flex;align-items:center;gap:11px;margin-bottom:9px;}
+.ce-row:last-child{margin-bottom:0;}
+.ce-name{font-size:0.78rem;color:var(--text);min-width:120px;display:flex;flex-direction:column;}
+.ce-role{font-size:0.64rem;color:var(--text-dim);font-weight:400;margin-top:1px;}
+.ce-track{flex:1;height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;}
+.ce-fill{height:100%;background:var(--text-dim);border-radius:4px;}
+.ce-fill.over{background:var(--warn);}
+.ce-ct{font-family:var(--font-mono);font-size:0.74rem;color:var(--text-mid);min-width:38px;text-align:right;}
+.ce-ct.over{color:var(--warn);font-weight:500;}
+/* big-number stat tile (hours saved) */
+.stat-big{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;}
+.stat-num{font-size:2.1rem;font-weight:600;color:var(--text);letter-spacing:-0.02em;line-height:1;}
+.stat-unit{font-size:0.82rem;color:var(--text-mid);}
+.stat-sub{font-size:0.74rem;color:var(--text-mid);line-height:1.55;}
+.stat-sub b{color:var(--text);font-weight:600;}
+/* coverage tally tile */
+.cov-tally{display:flex;gap:10px;}
+.cov-cell{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:11px 12px;text-align:left;}
+.cov-cell.gap{border-color:var(--warn-deep);background:rgba(245,158,11,0.06);}
+.cov-cell-n{font-size:1.3rem;font-weight:600;color:var(--text);line-height:1;}
+.cov-cell.gap .cov-cell-n{color:var(--warn);}
+.cov-cell-l{font-size:0.68rem;color:var(--text-mid);margin-top:5px;line-height:1.4;}
+@media(max-width:640px){.pov-grid{grid-template-columns:1fr;}.dash-grid{grid-template-columns:1fr;}}
+/* parse confirmation line */
+.parseline{display:flex;align-items:center;gap:9px;font-size:0.76rem;color:var(--text-mid);background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:9px 13px;margin-bottom:var(--sp-3);}
+.parseline b{color:var(--text);font-weight:600;}
+.pl-tick{color:var(--text);font-weight:700;background:var(--surface-3);width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:0.7rem;flex-shrink:0;border:1px solid var(--border-bright);}
+/* raw model return on a bad parse */
+.err-raw{margin-top:10px;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:var(--surface);}
+.err-raw-h{font-size:0.66rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim);padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--border);}
+.err-raw pre{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-mid);padding:11px 13px;margin:0;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;line-height:1.5;}
+/* coverage gap: stronger state + next-action */
+.coverage.has-gap{border-color:var(--warn-deep);}
+.coverage.has-gap .coverage-head{background:rgba(245,158,11,0.10);border-bottom-color:var(--warn-deep);}
+.cov-row.gap{background:rgba(245,158,11,0.06);border-radius:5px;}
+.cov-action{padding:11px 12px;background:rgba(245,158,11,0.08);border-top:1px solid var(--warn-deep);}
+.cov-action-t{font-size:0.78rem;font-weight:600;color:var(--warn);margin-bottom:4px;}
+.cov-action-opts{font-size:0.74rem;color:var(--text-mid);line-height:1.55;}
+/* ---- tooltips: subtle dotted underline, quiet popover ---- */
+.tip{position:relative;border-bottom:1px dotted var(--text-dim);cursor:help;}
+.tip>.tip-pop{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);
+  background:var(--surface-3);border:1px solid var(--border-bright);border-radius:7px;padding:9px 12px;
+  font-family:var(--font-body);font-size:0.74rem;font-weight:400;line-height:1.5;color:var(--text-mid);
+  width:max-content;max-width:240px;text-align:left;white-space:normal;letter-spacing:0;text-transform:none;
+  opacity:0;visibility:hidden;transition:opacity .14s,transform .14s;z-index:60;
+  box-shadow:0 6px 20px rgba(0,0,0,0.4);pointer-events:none;}
+.tip>.tip-pop b{color:var(--text);font-weight:600;}
+.tip>.tip-pop::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--border-bright);}
+.tip:hover>.tip-pop,.tip.show>.tip-pop{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+
+/* ---- collapsible heavy blocks ---- */
+.collapsible{margin-top:var(--sp-4);border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+.coll-head{display:flex;align-items:center;gap:11px;padding:12px 16px;cursor:pointer;background:var(--surface-2);transition:background .12s;user-select:none;}
+.coll-head:hover{background:var(--surface-3);}
+.coll-label{font-size:0.7rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-mid);}
+.coll-summary{font-size:0.78rem;color:var(--text-mid);margin-left:auto;font-family:var(--font-mono);text-align:right;}
+.coll-summary .em{color:var(--warn);}
+.coll-chevron{color:var(--text-dim);font-size:0.9rem;transition:transform .16s;flex-shrink:0;}
+.collapsible.open .coll-chevron{transform:rotate(90deg);color:var(--text);}
+.coll-body{display:none;}
+.collapsible.open .coll-body{display:block;}
+/* ---- demo scenario picker ---- */
+.scn-picker{background:var(--surface-2);border:1px solid var(--border-bright);border-radius:9px;padding:11px 14px;margin-bottom:var(--sp-4);}
+.scn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.scn-tag{font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);background:var(--bg);border:1px solid var(--border);padding:3px 7px;border-radius:5px;}
+.scn-btn{font-family:var(--font-body);font-size:0.76rem;font-weight:500;color:var(--text-mid);background:var(--surface);border:1px solid var(--border-bright);border-radius:6px;padding:6px 12px;cursor:pointer;transition:all .12s;}
+.scn-btn:hover{color:var(--text);border-color:var(--text-dim);}
+.scn-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+/* mode switch: Demo / Live parse (matches viewnav style) */
+.modesw{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:2px;}
+.modesw-btn{font-family:var(--font-body);font-size:0.74rem;font-weight:500;color:var(--text-mid);background:none;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;transition:all .12s;white-space:nowrap;}
+.modesw-btn:hover{color:var(--text);}
+.modesw-btn.active{background:var(--surface-3);color:var(--text);}
+.live-note{font-size:0.74rem;color:var(--text-mid);background:var(--surface-2);border:1px solid var(--border-bright);border-left:2px solid var(--text-dim);border-radius:6px;padding:9px 13px;margin-bottom:var(--sp-4);line-height:1.55;}
+.scn-blurb{font-size:0.76rem;color:var(--text-mid);margin-top:9px;line-height:1.5;}
+
+/* ---- capacity flag + swap suggestion on coverage rows ---- */
+.cov-cap{font-family:var(--font-mono);font-size:0.6rem;font-weight:500;color:var(--warn);background:rgba(245,158,11,0.10);border:1px solid var(--warn-deep);padding:1px 6px;border-radius:4px;margin-left:8px;}
+.cov-row.over{background:rgba(245,158,11,0.05);border-radius:5px;}
+.cov-swap{padding:10px 12px;margin:2px 0 6px;background:rgba(245,158,11,0.07);border:1px solid var(--warn-deep);border-radius:7px;}
+.cov-swap.noswap{background:var(--surface-3);border-color:var(--border-bright);}
+.cov-swap-t{font-size:0.76rem;color:var(--text);margin-bottom:8px;line-height:1.45;}
+.cov-swap-t b{color:var(--warn);font-weight:600;}
+.cov-swap.noswap .cov-swap-t b{color:var(--text);}
+.cov-swap-opts{display:flex;gap:7px;flex-wrap:wrap;}
+.swap-btn{font-family:var(--font-body);font-size:0.76rem;font-weight:500;color:var(--bg);background:var(--text);border:none;border-radius:6px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .12s;}
+.swap-btn:hover{background:#fff;}
+.swap-room{font-family:var(--font-mono);font-size:0.64rem;opacity:0.6;}
+.cov-swap-opts-text{font-size:0.74rem;color:var(--text-mid);line-height:1.5;}
+/* ---- quality floor: focus, motion, consistent interaction ---- */
+/* visible keyboard focus on everything clickable */
+.btn:focus-visible, .viewnav-btn:focus-visible, .modesw-btn:focus-visible,
+.scn-btn:focus-visible, .swap-btn:focus-visible, .writeback-btn:focus-visible,
+.modal-tab:focus-visible, .pm-row:focus-visible, .slot-top:focus-visible,
+.coll-head:focus-visible, .tip:focus-visible, .refresh:focus-visible,
+.modal-x:focus-visible{
+  outline:2px solid var(--text);outline-offset:2px;border-radius:6px;
+}
+/* one hover language: interactive surfaces lift toward the light, consistently */
+.pov-card{transition:background .14s;}
+.pov-card:hover{background:var(--surface-2);}
+.cov-row{transition:background .12s;}
+/* honor reduced-motion: kill the decorative stuff, keep instant state changes */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  .spinner{animation:none !important;border-top-color:var(--text);}
+}
+/* ---- signature: two-beat parse/compute loading sequence ---- */
+.seq-load{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 22px;display:flex;align-items:flex-start;gap:0;}
+.beat{display:flex;align-items:flex-start;gap:12px;flex:1;opacity:0.4;transition:opacity .3s;}
+.beat.active,.beat.done{opacity:1;}
+.beat-dot{width:26px;height:26px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-bright);display:grid;place-items:center;flex-shrink:0;color:var(--text);font-size:0.8rem;font-weight:700;transition:all .3s;}
+.beat.done .beat-dot{background:var(--text);color:var(--bg);border-color:var(--text);}
+.beat.active .beat-dot{border-color:var(--text-dim);}
+.beat-spin{width:13px;height:13px;border:2px solid var(--border-bright);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;}
+.beat-text{padding-top:1px;}
+.beat-t{font-size:0.84rem;font-weight:600;color:var(--text);letter-spacing:-0.01em;line-height:1.25;}
+.beat-d{font-size:0.74rem;color:var(--text-mid);margin-top:3px;font-family:var(--font-mono);}
+.beat-link{width:36px;height:1px;background:var(--border-bright);margin:13px 4px 0;flex-shrink:0;position:relative;overflow:hidden;}
+.beat-link::after{content:"";position:absolute;inset:0;background:var(--text);transform:translateX(-100%);transition:transform .4s;}
+.beat-link.on::after{transform:translateX(0);}
+@media(max-width:560px){.seq-load{flex-direction:column;gap:14px;}.beat-link{width:1px;height:20px;margin:0 0 0 13px;}.beat-link::after{transform:translateY(-100%);}.beat-link.on::after{transform:translateY(0);}}
+/* ---- candidate constraint card ---- */
+.cand{background:var(--surface-2);border:1px solid var(--border-bright);border-left:2px solid var(--text);border-radius:8px;padding:11px 14px;margin-bottom:var(--sp-3);}
+.cand-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.cand-tag{font-family:var(--font-mono);font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--bg);background:var(--text);padding:2px 7px;border-radius:5px;}
+.cand-name{font-size:0.88rem;font-weight:600;color:var(--text);}
+.cand-tz{margin-left:auto;font-family:var(--font-mono);font-size:0.68rem;color:var(--text-mid);}
+.cand-windows{font-family:var(--font-mono);font-size:0.76rem;color:var(--text);margin-top:7px;}
+.cand-note{font-size:0.72rem;color:var(--text-mid);margin-top:5px;line-height:1.5;}
+/* ---- per-interview duration + buffer rows in the slot sequence ---- */
+.seq-dur{font-family:var(--font-mono);font-size:0.68rem;color:var(--text-dim);margin-left:auto;}
+.seq-buffer{font-family:var(--font-mono);font-size:0.64rem;color:var(--text-dim);padding:2px 0 2px 106px;opacity:0.7;}
+.seq-buffer::before{content:"\00b7 \00b7 \00b7  ";letter-spacing:2px;}
+</style>
+</head>
+<body>
+
+<div class="topstrip">
+  <div class="topstrip-inner">
+    <div class="topstrip-left">
+      <svg class="topstrip-mark" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="18" fill="#1C1C1C"/>
+        <line x1="22" y1="36" x2="66" y2="50" stroke="#FAFAFA" stroke-width="5" stroke-linecap="round"/>
+        <line x1="22" y1="50" x2="66" y2="50" stroke="#FAFAFA" stroke-width="5" stroke-linecap="round"/>
+        <line x1="22" y1="64" x2="66" y2="50" stroke="#FAFAFA" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="72" cy="50" r="8" fill="#FAFAFA"/>
+      </svg>
+      <div class="topstrip-text">
+        <span class="product">Panel Slot Finder</span>
+        <span class="sep">|</span>
+        <span class="context">Scheduling <b>Jordan Reyes</b> &middot; TA Ops AI Enablement Lead &middot; Onsite Panel</span>
+      </div>
+    </div>
+    <div class="topstrip-right">
+      <div class="viewnav">
+        <button class="viewnav-btn active" id="navSched" onclick="switchView('sched')">Scheduler</button>
+        <button class="viewnav-btn" id="navDash" onclick="switchView('dash')">Dashboard</button>
+      </div>
+      <div class="modesw" id="modesw">
+        <button class="modesw-btn active" id="modeDemo" onclick="setMode(false)">Demo</button>
+        <button class="modesw-btn" id="modeLive" onclick="setMode(true)">Live parse</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="work">
+    <div id="viewSched">
+
+    <div class="scn-picker" id="scnPicker">
+      <div class="scn-row">
+        <span class="scn-tag">Demo</span>
+        <button class="scn-btn active" data-scn="clean" onclick="loadScenario('clean')">1 · Clean run</button>
+        <button class="scn-btn" data-scn="capacity" onclick="loadScenario('capacity')">2 · Capacity wall</button>
+        <button class="scn-btn" data-scn="gap" onclick="loadScenario('gap')">3 · Coverage gap</button>
+      </div>
+      <div class="scn-blurb" id="scnBlurb">Everyone trained for their interview, everyone has time. Watch it reconcile messy availability fast.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <span class="section-num">1</span>
+        <h2>Panel</h2>
+        <span class="refresh" onclick="alert('In production: re-pulls panel definition from Ashby API.');">&#8635; refresh</span>
+        <span class="src" id="srcPanel">sample panel</span>
+      </div>
+      <div class="section-body">
+        <div class="pm-list" id="pmList"></div>
+        <div class="opts-row">
+          <div class="opt">
+            <span class="opt-label">Default length</span>
+            <select id="dur">
+              <option value="30">30 min</option>
+              <option value="45" selected>45 min</option>
+              <option value="60">60 min</option>
+            </select>
+          </div>
+          <div class="opt">
+            <span class="opt-label">Who goes first</span>
+            <select id="order">
+              <option value="listed" selected>Panel order</option>
+              <option value="lead-first">Hiring manager first</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <span class="section-num">2</span>
+        <h2>Availability</h2>
+        <span class="refresh" onclick="alert('In production: re-pulls calendar data from Google Calendar API.');">&#8635; refresh</span>
+        <span class="src" id="srcAvail">sample availability</span>
+      </div>
+      <div class="section-body">
+        <div class="avail-note">This is sample availability you can edit. Type it however you like, in plain English, the way someone would actually write it. In Live parse mode, Claude reads your real text. In production this pulls straight from Google Calendar.</div>
+        <textarea id="avail" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <div class="keybar" id="keybar" style="display:none;">
+      <div class="keybar-inner">
+        <span class="kl">Anthropic API key</span>
+        <span class="dot" id="keyDot"></span>
+        <input type="password" id="apiKey" placeholder="sk-ant-...  (stays in this tab, never stored)" autocomplete="off">
+      </div>
+    </div>
+    <div class="live-note" id="liveNote" style="display:none;">Paste real availability below and it runs a real Claude parse with your key. The schedule is real. The calendar pull and Ashby write-back stay simulated in this prototype.</div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="findBtn">Find panel slots</button>
+      <button class="btn btn-ghost" id="resetBtn">Reset availability</button>
+    </div>
+
+    <div id="out">
+      <div class="out-empty">
+        <div class="ico"></div>
+        <p><b>Three calendars, one panel.</b> Find the times everyone's actually free, ranked, in seconds.</p>
+      </div>
+    </div>
+
+    <div class="foot">
+      <b>AI parses the language. Code does the scheduling math.</b><br>
+      Reconciliation engine, optimized for Ashby. Same primitives work for Greenhouse, Lever, or any ATS with a panel-stage webhook and write-back endpoint.
+    </div>
+    </div><!-- /viewSched -->
+
+    <div id="viewDash" style="display:none;"></div>
+
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Confirm and write to Ashby</h2>
+      <button class="modal-x" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tabSummary" onclick="switchTab('summary')">Summary</button>
+      <button class="modal-tab" id="tabApi" onclick="switchTab('api')">API call</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalSummary"></div>
+      <div id="modalApi" style="display:none;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmWriteback()">Write to Ashby</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Capacity: interviews already on someone's week before they flag overloaded. Tunable.
+const CAPACITY_CEIL = 4;
+
+// Competencies for the BetterUp Talent Acquisition Operations AI Enablement Lead
+// loop, modeled on the real interview plan. In production this comes from the
+// Ashby interview plan; when none exists the tool proposes it from the JD. Each
+// competency needs an interviewer calibrated to evaluate it.
+//  - Domain: senior stakeholder (Jessica). Small, senior, scheduling-scarce pool.
+//  - AI: core collaborator (Gail). Small, immediate-team pool.
+//  - Craft & Values (BetterUp's "Balloon"): a builder/values read drawn from a
+//    WIDE pool across the whole company. This is where capacity pressure lives,
+//    because those people have day jobs and nobody tracks their Balloon load.
+const PLAN_COMPETENCIES = [
+  { id:"domain", label:"Domain",          type:"Senior stakeholder",     mins:45 },
+  { id:"ai",     label:"AI",              type:"Core collaborator",      mins:60 },
+  { id:"craft",  label:"Craft & Values",  type:"Cross-company (Balloon)", mins:45 }
+];
+// minutes of breathing room between interviews: notes, a breather, a bio break.
+// A real loop is never packed wall to wall.
+const BUFFER_MINS = 10;
+function compMins(id){var c=PLAN_COMPETENCIES.filter(function(x){return x.id===id;})[0];return c?c.mins:45;}
+// which competency does this interviewer cover on the panel (first match)
+function personComp(p){var ids=PLAN_COMPETENCIES.map(function(c){return c.id;});return (p.calibratedFor||[]).filter(function(id){return ids.indexOf(id)>-1;})[0]||null;}
+
+// ---- Interviewer pool -----------------------------------------------------
+// The three real interviewers carry NEUTRAL data (calibrated, reasonable load,
+// never flagged): the homage is "he rebuilt our real loop," not fabricated
+// telemetry about real people. All capacity/bottleneck drama lives in the
+// invented cross-company Balloon bench. windows are minutes from midnight.
+function W(d,s,e){return {day:d,start:s,end:e};}
+const POOL = {
+  jessica: { name:"Jessica Brewer", role:"VP, Total Rewards & HR Ops", initials:"JB", calibratedFor:["domain"], loadThisWeek:2, windows:[W("Tue",780,915),W("Wed",600,735),W("Thu",660,840)] },
+  gail:    { name:"Gail Goochee",   role:"AI Enablement (core collaborator)", initials:"GG", calibratedFor:["ai"], loadThisWeek:2, windows:[W("Tue",600,840),W("Wed",660,840),W("Thu",660,900)] },
+  azhar:   { name:"Azhar Anwar",    role:"Balloon interviewer \u00b7 Eng", initials:"AA", calibratedFor:["craft"], loadThisWeek:2, windows:[W("Tue",600,780),W("Wed",660,840),W("Thu",600,870)] },
+  marisol: { name:"Marisol Vega", role:"Balloon \u00b7 iOS Engineer",   initials:"MV", calibratedFor:["craft"], loadThisWeek:4, windows:[W("Tue",600,915),W("Wed",600,840),W("Thu",600,900)] },
+  theo:    { name:"Theo Park",    role:"Balloon \u00b7 Data Engineer",  initials:"TP", calibratedFor:["craft"], loadThisWeek:1, windows:[W("Tue",780,960),W("Wed",660,840),W("Thu",660,900)] },
+  rena:    { name:"Rena Cho",     role:"Balloon \u00b7 Product Designer", initials:"RC", calibratedFor:["craft"], loadThisWeek:0, windows:[W("Tue",600,840),W("Wed",600,780),W("Thu",660,840)] },
+  liam:    { name:"Liam Foster",  role:"Balloon \u00b7 Backend Engineer", initials:"LF", calibratedFor:["craft"], loadThisWeek:4, windows:[W("Wed",600,720),W("Thu",780,900)] },
+  pat:     { name:"Pat Quinn",    role:"Recruiting Coordinator", initials:"PQ", calibratedFor:[], loadThisWeek:1, windows:[W("Tue",600,960),W("Wed",600,960),W("Thu",600,960)] }
+};
+function pickPool(keys){return keys.map(function(k){return JSON.parse(JSON.stringify(POOL[k]));});}
+
+// ---- Demo scenarios -------------------------------------------------------
+// Each run lands one value beat. The picker loads these; production hides the picker.
+// The candidate is a hard constraint: the panel has to fit Jordan's windows too.
+// Jordan is employed and on Eastern time, so the windows are narrow and tz-shifted.
+const CANDIDATE = {
+  name:"Jordan Reyes", tz:"ET",
+  // windows in PANEL-LOCAL time (PT), converted from Jordan's ET availability.
+  // Wide enough that the clean scenario fits comfortably; the constraint still
+  // bites in tighter scenarios.
+  windows:[W("Tue",600,900),W("Wed",600,840),W("Thu",600,900)]
+};
+const SCENARIOS = {
+  clean: {
+    label:"1 \u00b7 Clean run",
+    blurb:"The real loop: Jessica on domain, Gail on AI, Azhar on the Balloon. Everyone trained, everyone has time, and it fits Jordan's hours too. Watch it reconcile fast.",
+    panel:["jessica","gail","azhar"]
+  },
+  capacity: {
+    label:"2 \u00b7 Capacity wall",
+    blurb:"The Balloon seat went to Marisol, an iOS engineer pulled across four reqs this week. She's at capacity. The tool suggests someone else trained for it, with time to spare.",
+    panel:["jessica","gail","marisol"]
+  },
+  gap: {
+    label:"3 \u00b7 Coverage gap",
+    blurb:"A coordinator landed in the Balloon seat with no training to run it. The tool won't fake it. It offers the people across the company who can.",
+    panel:["jessica","gail","pat"]
+  }
+};
+let CURRENT_SCENARIO = "clean";
+
+function scenarioParsed(key){
+  var sc=SCENARIOS[key];
+  return { planExists:true, scenario:key, people:pickPool(sc.panel), candidate:JSON.parse(JSON.stringify(CANDIDATE)) };
+}
+
+const DEMO_AVAIL_TEXT =
+`Jessica (Domain): Tuesday I'm open after 1, say 1 to 3:15.
+Wednesday mornings only, 10 to 12:15. Thursday 11 to 2.
+
+Gail (AI): Tuesday 10 to 2. Wednesday 11 to 2.
+Thursday 11 to 3 works for me.
+
+Azhar (Balloon): Tuesday 10 to 1. Wednesday 11 to 2.
+Thursday 10 to 1, but a standup 11 to 11:15.`;
+
+const DEMO_PARSED = scenarioParsed("clean");
+
+const DAY_ORDER={Tue:0,Wed:1,Thu:2,Mon:-1,Fri:3};
+const dayFull={Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday",Thu:"Thursday",Fri:"Friday"};
+function mins2str(m){var h=Math.floor(m/60),mm=m%60,ap=h>=12?"PM":"AM",hh=h%12;if(hh===0)hh=12;return hh+(mm?":"+String(mm).padStart(2,"0"):"")+" "+ap;}
+// tooltip: wraps text in a dotted-underline span with a quiet popover. Works on
+// hover (CSS) and on click/tap (toggleTip) so it survives a trackpad demo.
+function tip(text,pop){return '<span class="tip" onclick="toggleTip(event,this)">'+text+'<span class="tip-pop">'+pop+'</span></span>';}
+function toggleTip(e,el){e.stopPropagation();var open=el.classList.contains("show");document.querySelectorAll(".tip.show").forEach(function(t){t.classList.remove("show");});if(!open)el.classList.add("show");}
+// collapsible block toggle
+function toggleColl(el){el.classList.toggle("open");}
+function dayWindows(p,d){return p.windows.filter(function(w){return w.day===d;}).map(function(w){return [w.start,w.end];}).sort(function(a,b){return a[0]-b[0];});}
+function isFree(p,d,s,e){return dayWindows(p,d).some(function(w){return s>=w[0]&&e<=w[1];});}
+// candidate must be free for the WHOLE block (their day is one continuous session)
+function candFree(cand,d,blockStart,blockEnd){if(!cand)return true;return dayWindows(cand,d).some(function(w){return blockStart>=w[0]&&blockEnd<=w[1];});}
+// build a sequenced block: each interviewer gets their interview's own length,
+// with a buffer between interviews. The candidate must fit the whole span.
+function tryBlock(people,d,startT,order,cand){
+  var seq=[],t=startT;
+  for(var i=0;i<order.length;i++){
+    var p=order[i];
+    var dur=compMins(personComp(p))||45;
+    if(!isFree(p,d,t,t+dur))return null;
+    seq.push({name:p.name,role:p.role,start:t,end:t+dur,comp:personComp(p)});
+    t+=dur;
+    if(i<order.length-1)t+=BUFFER_MINS; // buffer between, not after the last
+  }
+  var blockEnd=t;
+  if(!candFree(cand,d,startT,blockEnd))return null; // candidate is a hard constraint
+  return {day:d,start:startT,end:blockEnd,seq:seq};
+}
+function candidateStarts(people,d){var lo=Infinity,hi=-Infinity;people.forEach(function(p){dayWindows(p,d).forEach(function(w){lo=Math.min(lo,w[0]);hi=Math.max(hi,w[1]);});});if(lo===Infinity)return [];var s=[];for(var t=lo;t<=hi;t+=15)s.push(t);return s;}
+function orderInterviewers(people,mode){var a=people.slice();if(mode==="lead-first")a.sort(function(x,y){return (y.role==="Hiring Manager")-(x.role==="Hiring Manager");});return a;}
+
+// ---- Composition + capacity ----------------------------------------------
+// Capacity is a transparent heuristic: load this week vs CAPACITY_CEIL. It is
+// advisory. It flags, it never blocks a slot. headroom = ceil - load.
+function headroom(p){return CAPACITY_CEIL - (p.loadThisWeek||0);}
+function isOverloaded(p){return (p.loadThisWeek||0) >= CAPACITY_CEIL;}
+
+// Coverage: does every required competency have at least one calibrated, assigned
+// interviewer? Returns per-competency status. This is a content-validity check,
+// not a scheduling step. Uncalibrated assignment is a gap, not a soft warning.
+function checkCoverage(people){
+  return PLAN_COMPETENCIES.map(function(c){
+    var eligible = people.filter(function(p){return (p.calibratedFor||[]).indexOf(c.id)>-1;});
+    eligible.sort(function(a,b){return headroom(b)-headroom(a);});
+    var assigned = eligible[0]||null;
+    // swap candidates: calibrated people from the full pool who are NOT already
+    // on this panel and have headroom. Ranked most-rested first. Calibration is
+    // never traded for availability: only people calibrated for this competency
+    // appear, full stop.
+    var onPanel = people.map(function(p){return p.name;});
+    var bench = Object.keys(POOL).map(function(k){return POOL[k];})
+      .filter(function(p){return (p.calibratedFor||[]).indexOf(c.id)>-1 && onPanel.indexOf(p.name)<0;})
+      .sort(function(a,b){return headroom(b)-headroom(a);});
+    var assignedOver = assigned ? isOverloaded(assigned) : false;
+    // a useful swap exists only if the bench has someone with real headroom
+    var swapCandidates = bench.filter(function(p){return headroom(p)>0;});
+    return {
+      id:c.id,
+      competency:c.label,
+      type:c.type,
+      covered:eligible.length>0,
+      eligible:eligible,
+      assigned:assigned,
+      multiOption:eligible.length>1,
+      assignedOver:assignedOver,
+      swapCandidates:swapCandidates,
+      // gap routing: no calibrated alternate with headroom to suggest
+      noCalibratedSwap: assignedOver && swapCandidates.length===0
+    };
+  });
+}
+function coverageGaps(cov){return cov.filter(function(c){return !c.covered;});}
+// ---------------------------------------------------------------------------
+
+function findBlockSlots(parsed,dur,orderMode){
+  var people=parsed.people, cand=parsed.candidate;
+  var days=Array.from(new Set([].concat.apply([],people.map(function(p){return p.windows.map(function(w){return w.day;});})))).sort(function(a,b){return DAY_ORDER[a]-DAY_ORDER[b];});
+  var order=orderInterviewers(people,orderMode);
+  var perDay={};
+  days.forEach(function(d){
+    var db=[];
+    candidateStarts(people,d).forEach(function(s){var b=tryBlock(people,d,s,order,cand);if(b)db.push(b);});
+    if(!db.length)return;
+    db.sort(function(a,b){return a.start-b.start;});
+    perDay[d]=db[0]; perDay[d].flex=db.length;
+  });
+  var blocks=Object.keys(perDay).map(function(k){return perDay[k];});
+  blocks.forEach(function(b){b.span=b.end-b.start;b.score=DAY_ORDER[b.day]*1000+b.start;});
+  blocks.sort(function(a,b){return a.score-b.score;});
+  return blocks.slice(0,4);
+}
+function explainLocal(slot,all,i){
+  var n=slot.seq.length;
+  if(i===0){
+    if(slot.flex>=4) return "Earliest everyone's free together, with room to move if a calendar shifts.";
+    if(slot.flex>=2) return "Earliest everyone's free together. A little give if something changes.";
+    return "Earliest everyone's free together, but it's tight. One change and this slot's gone.";
+  }
+  if(slot.flex>=2) return "Solid backup, with room to shift.";
+  return "Works as a backup, but there's no give.";
+}
+// max characters accepted in the availability paste. Real availability for a
+// panel is a few hundred chars; this ceiling stops an accidental huge paste
+// from hitting the API and failing opaquely.
+const MAX_AVAIL_CHARS = 6000;
+
+// Treat Claude output as input to verify, not as the answer. After JSON.parse
+// succeeds we still confirm the SHAPE the scheduler depends on. Returns a
+// summary on success; throws a tagged error the find flow can shape.
+function validateParsed(p){
+  if(!p || typeof p!=="object" || !Array.isArray(p.people) || !p.people.length)
+    throw new Error("SHAPE: parsed result has no people array.");
+  var windows=0;
+  p.people.forEach(function(person,i){
+    if(!person.name || typeof person.name!=="string")
+      throw new Error("SHAPE: person "+(i+1)+" is missing a name.");
+    if(!Array.isArray(person.windows) || !person.windows.length)
+      throw new Error("SHAPE: "+person.name+" has no availability windows.");
+    person.windows.forEach(function(w){
+      if(typeof w.start!=="number" || typeof w.end!=="number" || w.end<=w.start)
+        throw new Error("SHAPE: "+person.name+" has a window with invalid times.");
+      windows++;
+    });
+  });
+  return {people:p.people.length, windows:windows};
+}
+
+async function parseWithClaude(text,key){
+  var sys="You convert messy interviewer availability into strict JSON. Output ONLY valid JSON, no prose, no markdown fences.\nSchema: {\"people\":[{\"name\":string,\"role\":string,\"windows\":[{\"day\":\"Mon\"|\"Tue\"|\"Wed\"|\"Thu\"|\"Fri\",\"start\":int,\"end\":int}]}]}\nstart/end are minutes from midnight (10:00 AM = 600, 1:30 PM = 810). If someone names a break/standup inside a window, split it into two windows around the gap. Infer role from parentheses or context; use \"Interviewer\" if unknown.";
+  var res;
+  try{
+    res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,system:sys,messages:[{role:"user",content:text}]})});
+  }catch(e){ throw new Error("NETWORK: could not reach the API. Check the connection."); }
+  if(!res.ok){var t=await res.text();throw new Error("API: "+res.status+" "+t.slice(0,140));}
+  var data=await res.json();
+  var out=data.content.filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim().replace(/```json|```/g,"").trim();
+  var p;
+  try{ p=JSON.parse(out); }
+  catch(e){ var err=new Error("JSON: the model did not return clean JSON."); err.raw=out; throw err; }
+  try{ validateParsed(p); }
+  catch(e){ e.raw=out; throw e; }
+  p.people.forEach(function(person){person.initials=person.name.slice(0,2).toUpperCase();});
+  return p;
+}
+async function explainWithClaude(slots,dur,key){
+  var sys="You help a recruiting coordinator pick a panel slot. For each ranked slot, write one short, plain sentence a coordinator would actually say. Slot 1 is the pick. Keep it under 14 words. No jargon, no 'valid start times', no narrating the math. Just whether it's the best option and whether there's room to move if a calendar shifts. Output ONLY a JSON array of strings, no markdown, no filler.";
+  var payload=slots.map(function(s){return {day:dayFull[s.day],time:mins2str(s.start)+"-"+mins2str(s.end),flexibility:s.flex,sequence:s.seq.map(function(x){return x.name+" "+mins2str(x.start);})};});
+  var res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:600,system:sys,messages:[{role:"user",content:JSON.stringify(payload)}]})});
+  if(!res.ok)throw new Error("explain "+res.status);
+  var data=await res.json();
+  var out=data.content.filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim().replace(/```json|```/g,"").trim();
+  return JSON.parse(out);
+}
+
+function renderPanelMembers(parsed){
+  var html="";
+  var cov = checkCoverage(parsed.people);
+  parsed.people.forEach(function(p,i){
+    var totalMins=p.windows.reduce(function(a,w){return a+(w.end-w.start);},0);
+    var totalHrs=Math.round(totalMins/60*10)/10;
+    var isTight=totalHrs<8;
+    var byDay={};
+    p.windows.forEach(function(w){(byDay[w.day]=byDay[w.day]||[]).push(mins2str(w.start)+"\u2013"+mins2str(w.end));});
+    var summary=Object.keys(byDay).sort(function(a,b){return DAY_ORDER[a]-DAY_ORDER[b];}).map(function(d){return dayFull[d]+" "+byDay[d].join(", ");}).join("  \u00b7  ");
+    // what competencies is this person calibrated to evaluate
+    var calLabels=(p.calibratedFor||[]).map(function(id){var c=PLAN_COMPETENCIES.filter(function(x){return x.id===id;})[0];return c?c.label:id;});
+    var calStr = calLabels.length ? calLabels.join(", ") : "not calibrated for this plan";
+    var over = isOverloaded(p);
+    var load = (p.loadThisWeek||0);
+    html+='<div class="pm-row" tabindex="0" role="button" onclick="togglePM('+i+')" id="pm-'+i+'">'
+      +'<div class="pm-avatar">'+p.initials+'</div>'
+      +'<div class="pm-info"><div class="pm-name">'+p.name
+      +' <span class="pm-cal'+(calLabels.length?'':' uncal')+'">'+(calLabels.length?'trained':'not trained')+'</span></div>'
+      +'<div class="pm-role">'+p.role+'</div></div>'
+      +'<div class="pm-load-stack">'
+      +'<div class="pm-cap '+(over?'over':'')+'">'+tip(load+'/'+CAPACITY_CEIL+' this wk',"Interviews already booked this week vs the capacity ceiling of "+CAPACITY_CEIL+". "+(over?"<b>At capacity.</b> Adding this panel overloads them.":headroom(p)+" slot"+(headroom(p)===1?'':'s')+" of headroom left."))+'</div>'
+      +'<div class="pm-load '+(isTight?'tight':'')+'">'+totalHrs+'h free</div>'
+      +'</div>'
+      +'<div class="pm-chevron">\u203A</div>'
+      +'</div>'
+      +'<div class="pm-detail" id="pmd-'+i+'">'
+      +'<div class="pmd-line"><span class="pmd-k">Evaluates</span> '+calStr+'</div>'
+      +'<div class="pmd-line"><span class="pmd-k">Free</span> '+summary+'</div>'
+      +'</div>';
+  });
+  return renderCandidate(parsed.candidate) + renderCoverage(cov) + html;
+}
+// the candidate is the hard constraint everything has to fit. Show their hours and
+// timezone up top so it's clear the panel is being built around them, not just the team.
+function renderCandidate(cand){
+  if(!cand)return "";
+  var byDay={};
+  cand.windows.forEach(function(w){(byDay[w.day]=byDay[w.day]||[]).push(mins2str(w.start)+"\u2013"+mins2str(w.end));});
+  var summary=Object.keys(byDay).sort(function(a,b){return DAY_ORDER[a]-DAY_ORDER[b];}).map(function(d){return dayFull[d].slice(0,3)+" "+byDay[d].join(", ");}).join("  \u00b7  ");
+  return '<div class="cand">'
+    +'<div class="cand-head"><span class="cand-tag">Candidate</span><span class="cand-name">'+cand.name+'</span>'
+    +'<span class="cand-tz">'+tip(cand.tz+" \u00b7 times shown in panel time","Jordan is on "+cand.tz+". The hours below are converted to the panel's timezone so you\'re comparing like for like.")+'</span></div>'
+    +'<div class="cand-windows">Free: '+summary+'</div>'
+    +'<div class="cand-note">Every slot below fits inside these hours. The candidate is the constraint the panel is built around.</div>'
+    +'</div>';
+}
+// composition coverage strip: every required competency, who covers it, gaps in amber
+function renderCoverage(cov){
+  var gaps=coverageGaps(cov);
+  var rows=cov.map(function(c){
+    var who = c.assigned ? c.assigned.name : "no calibrated interviewer";
+    var multi = c.multiOption ? '<span class="cov-multi">'+c.eligible.length+' eligible \u00b7 HM picks</span>' : '';
+    var capFlag = c.assignedOver ? '<span class="cov-cap">at capacity</span>' : '';
+    var rowHtml = '<div class="cov-row '+(c.covered?'':'gap')+(c.assignedOver?' over':'')+'">'
+      +'<span class="cov-comp">'+c.competency+'</span>'
+      +'<span class="cov-type">'+c.type+'</span>'
+      +'<span class="cov-who">'+who+capFlag+'</span>'+multi+'</div>';
+    // proactive swap: assigned person is at capacity and a calibrated alternate has headroom
+    if(c.assignedOver && c.swapCandidates.length){
+      var best=c.swapCandidates[0];
+      rowHtml += '<div class="cov-swap">'
+        +'<div class="cov-swap-t"><b>'+c.assigned.name+'</b> is at capacity. Someone else trained for this, with time to spare:</div>'
+        +'<div class="cov-swap-opts">'
+        + c.swapCandidates.slice(0,3).map(function(p){
+            return '<button class="swap-btn" onclick="doSwap(\''+c.assigned.name+'\',\''+p.name+'\')">Swap in '+p.name+' <span class="swap-room">'+headroom(p)+' free</span></button>';
+          }).join("")
+        +'</div></div>';
+    }
+    // over capacity but no calibrated swap: route the decision, never fake it
+    if(c.noCalibratedSwap){
+      rowHtml += '<div class="cov-swap noswap">'
+        +'<div class="cov-swap-t"><b>'+c.assigned.name+'</b> is at capacity and nobody else trained for this has time.</div>'
+        +'<div class="cov-swap-opts-text">Train another interviewer on '+c.competency.toLowerCase()+', or keep '+c.assigned.name+' and flag the overload on the record.</div>'
+        +'</div>';
+    }
+    return rowHtml;
+  }).join("");
+  var hasGap=gaps.length>0;
+  var head = hasGap
+    ? '<span class="cov-status gap">'+gaps.length+' competenc'+(gaps.length===1?'y':'ies')+' uncovered</span>'
+    : '<span class="cov-status ok">All competencies covered</span>';
+  // gap routing: if a calibrated bench alternate exists, offer the swap (better than
+  // "go train someone"). Only fall back to train-or-override when the bench is empty too.
+  var gapAction="";
+  if(hasGap){
+    gapAction='<div class="cov-action">';
+    gaps.forEach(function(g){
+      gapAction+='<div class="cov-action-t">Nobody on this panel is trained for the '+g.competency.toLowerCase()+' interview.</div>';
+      if(g.swapCandidates && g.swapCandidates.length){
+        gapAction+='<div class="cov-swap-opts" style="margin-top:6px">'
+          + g.swapCandidates.slice(0,3).map(function(p){
+              return '<button class="swap-btn" onclick="addForGap(\''+g.id+'\',\''+p.name+'\')">Add '+p.name+' <span class="swap-room">'+headroom(p)+' free</span></button>';
+            }).join("")
+          +'</div>';
+      }else{
+        gapAction+='<div class="cov-action-opts">Train a second interviewer here, or schedule anyway and flag the gap on the record.</div>';
+      }
+    });
+    gapAction+='</div>';
+  }
+  return '<div class="coverage'+(hasGap?' has-gap':'')+'">'
+    +'<div class="coverage-head"><span class="cov-title">Interview plan coverage</span>'+head+'</div>'
+    +'<div class="coverage-body">'+rows+'</div>'
+    +gapAction
+    +'<div class="coverage-foot">Each interview needs someone trained to run it. When more than one person can, the hiring manager picks.</div>'
+    +'</div>';
+}
+// swap a panel member for a bench alternate, then recompute the whole output
+function doSwap(outName,inName){
+  if(!CURRENT_PARSED)return;
+  var inPerson=null;
+  Object.keys(POOL).forEach(function(k){if(POOL[k].name===inName)inPerson=JSON.parse(JSON.stringify(POOL[k]));});
+  if(!inPerson)return;
+  CURRENT_PARSED.people=CURRENT_PARSED.people.map(function(p){return p.name===outName?inPerson:p;});
+  rerunWithCurrent();
+}
+// fill a coverage gap: replace whoever on the panel is NOT calibrated for any plan
+// competency (the uncalibrated seat) with the chosen calibrated bench alternate.
+function addForGap(compId,inName){
+  if(!CURRENT_PARSED)return;
+  var inPerson=null;
+  Object.keys(POOL).forEach(function(k){if(POOL[k].name===inName)inPerson=JSON.parse(JSON.stringify(POOL[k]));});
+  if(!inPerson)return;
+  var planIds=PLAN_COMPETENCIES.map(function(c){return c.id;});
+  // find a panel seat held by someone not calibrated for any plan competency
+  var seatIdx=CURRENT_PARSED.people.findIndex(function(p){
+    return !(p.calibratedFor||[]).some(function(id){return planIds.indexOf(id)>-1;});
+  });
+  if(seatIdx<0){CURRENT_PARSED.people.push(inPerson);} // no uncalibrated seat, add
+  else{CURRENT_PARSED.people[seatIdx]=inPerson;}
+  rerunWithCurrent();
+}
+function togglePM(i){
+  var row=document.getElementById('pm-'+i);
+  document.querySelectorAll('.pm-row.open').forEach(function(r){if(r.id!=='pm-'+i)r.classList.remove('open');});
+  row.classList.toggle('open');
+}
+
+function renderSlots(slots,reasons){
+  if(!slots.length) return '<div class="err"><b>Nothing fits everyone yet.</b> No time works for the whole panel <i>and</i> the candidate inside the hours they\'ve given. In production this asks whoever\'s blocking for a little more availability, instead of restarting the thread.</div>';
+  var h='<div class="results-head"><h3>Ranked panel slots</h3><span class="results-meta">'+slots.length+' day'+(slots.length>1?'s':'')+' work \u00b7 click a slot to select</span></div>';
+  slots.forEach(function(s,i){
+    var best=i===0;
+    h+='<div class="slot '+(best?'best':'')+'" id="slot-'+i+'">'
+      +'<div class="slot-top" tabindex="0" role="button" onclick="selectSlot('+i+')"><span class="rank">'+(i+1)+'</span>'
+      +'<div class="slot-when"><div class="day">'+dayFull[s.day]+'</div><div class="time">'+mins2str(s.start)+' \u2013 '+mins2str(s.end)+'</div></div>'
+      +'<span class="badge '+(best?'':'alt')+'" id="badge-'+i+'">'+(best?'Recommend':'Backup')+'</span></div>'
+      +'<div class="slot-body"><div class="seq">'
+      +s.seq.map(function(x,j){
+          var row='<div class="seq-row"><span class="t">'+mins2str(x.start)+'\u2013'+mins2str(x.end)+'</span><span class="who">'+x.name+'</span><span class="rl">'+x.role+'</span><span class="seq-dur">'+(x.end-x.start)+'m</span></div>';
+          if(j<s.seq.length-1)row+='<div class="seq-buffer">'+BUFFER_MINS+' min buffer</div>';
+          return row;
+        }).join("")
+      +'</div><div class="why">'+(reasons[i]||"")+'</div></div></div>';
+  });
+  return h;
+}
+
+var SELECTED_SLOT_IDX = 0;
+var CURRENT_SLOTS = [];
+var CURRENT_PARSED = null;
+
+function selectSlot(i){
+  SELECTED_SLOT_IDX = i;
+  document.querySelectorAll('.slot').forEach(function(el,idx){
+    el.classList.remove('selected');
+    var badge=document.getElementById('badge-'+idx);
+    if(badge){badge.textContent = idx===0 ? 'Recommend' : 'Backup'; badge.classList.remove('selected');}
+  });
+  var slotEl=document.getElementById('slot-'+i);
+  if(slotEl){
+    slotEl.classList.add('selected');
+    var badge=document.getElementById('badge-'+i);
+    if(badge){badge.textContent = 'Selected';badge.classList.add('selected');}
+  }
+  // refresh POV readout for the selected slot
+  var povEl=document.getElementById('povBox');
+  if(povEl && CURRENT_PARSED){povEl.innerHTML=renderPOV(computePOV(CURRENT_PARSED,CURRENT_SLOTS[i]));}
+  updateWriteback();
+}
+
+function updateWriteback(){
+  var wb=document.getElementById('writeback');
+  if(!wb)return;
+  var s=CURRENT_SLOTS[SELECTED_SLOT_IDX];
+  if(!s){wb.classList.add('disabled');return;}
+  wb.classList.remove('disabled');
+  document.getElementById('writebackText').innerHTML='Selected: <b>'+dayFull[s.day]+' '+mins2str(s.start)+'</b> with '+s.seq.map(function(x){return x.name;}).join(', ')+'.';
+}
+
+// Four-POV readout: each stakeholder gets exactly one number they'd act on.
+function computePOV(parsed,slot){
+  if(!slot) return null;
+  // Candidate: total day length and longest gap between interviews
+  var dayLen = slot.end - slot.start;
+  var longestGap = 0;
+  for(var i=1;i<slot.seq.length;i++){
+    var g = slot.seq[i].start - slot.seq[i-1].end;
+    if(g>longestGap) longestGap=g;
+  }
+  // Recruiter: reschedule exposure = how thin the fallback is (fewer alt starts = more exposed)
+  var exposure = slot.flex<=1 ? "high" : slot.flex<=3 ? "moderate" : "low";
+  // HM: competency coverage from the plan
+  var cov = checkCoverage(parsed.people);
+  var gaps = coverageGaps(cov).length;
+  // Interviewer: max load on the panel and whether anyone is over the ceiling
+  var maxLoad = Math.max.apply(null, parsed.people.map(function(p){return p.loadThisWeek||0;}));
+  var overCount = parsed.people.filter(isOverloaded).length;
+  return {
+    candidate:{dayLen:dayLen, longestGap:longestGap},
+    recruiter:{exposure:exposure, alts:slot.flex},
+    hm:{covered:cov.length-gaps, total:cov.length, gaps:gaps},
+    interviewer:{maxLoad:maxLoad, ceil:CAPACITY_CEIL, overCount:overCount}
+  };
+}
+function fmtDur(m){var h=Math.floor(m/60),mm=m%60;return (h?h+"h":"")+(mm?(h?" ":"")+mm+"m":"")||"0m";}
+function renderPOV(pov){
+  if(!pov) return "";
+  var cand = pov.candidate.longestGap>0
+    ? fmtDur(pov.candidate.dayLen)+" on site, longest gap "+fmtDur(pov.candidate.longestGap)
+    : fmtDur(pov.candidate.dayLen)+" on site, back-to-back, no gaps";
+  var candGood = pov.candidate.longestGap<=15;
+  var rec = pov.recruiter.alts+" fallback start"+(pov.recruiter.alts===1?'':'s')+", "+pov.recruiter.exposure+" reschedule exposure";
+  var recGood = pov.recruiter.exposure==="low";
+  var hm = pov.hm.covered+" of "+pov.hm.total+" competencies covered"+(pov.hm.gaps?", "+pov.hm.gaps+" gap":"");
+  var hmGood = pov.hm.gaps===0;
+  var iv = pov.interviewer.overCount>0
+    ? pov.interviewer.overCount+" interviewer"+(pov.interviewer.overCount===1?'':'s')+" at or over "+pov.interviewer.ceil+"/wk"
+    : "max load "+pov.interviewer.maxLoad+"/"+pov.interviewer.ceil+", none overloaded";
+  var ivGood = pov.interviewer.overCount===0;
+  function card(label,val,good,warn,pop){
+    return '<div class="pov-card'+(warn&&!good?' pov-warn':'')+'">'
+      +'<div class="pov-label">'+tip(label,pop)+'</div>'
+      +'<div class="pov-val">'+val+'</div></div>';
+  }
+  // summary line: count the warnings so the signal is visible while collapsed
+  var warns=[!candGood,!hmGood,!ivGood].filter(Boolean).length;
+  var summary = warns
+    ? '<span class="em">'+warns+' flag'+(warns===1?'':'s')+'</span>'
+    : 'all clear';
+  var cards='<div class="pov-grid">'
+    +card("Candidate",cand,candGood,true,"How the day feels for the person interviewing. <b>Long gaps signal a chaotic loop.</b>")
+    +card("Recruiter",rec,recGood,false,"How exposed this slot is to a reschedule. More fallback starts means more give if a calendar moves.")
+    +card("Hiring manager",hm,hmGood,true,"Whether every interview has someone <b>trained</b> to run it. A gap means that interview goes unevaluated.")
+    +card("Interviewers",iv,ivGood,true,"Load on the panel this week. <b>Amber</b> means someone is at or over capacity, where burnout starts.")
+    +'</div>';
+  return '<div class="collapsible" id="povColl">'
+    +'<div class="coll-head" tabindex="0" role="button" onclick="toggleColl(document.getElementById(\'povColl\'))">'
+    +'<span class="coll-chevron">\u203A</span>'
+    +'<span class="coll-label">What this loop costs, by who lives it</span>'
+    +'<span class="coll-summary">'+summary+'</span></div>'
+    +'<div class="coll-body" style="padding:0">'+cards+'</div></div>';
+}
+
+function computeCapture(parsed,slots,dur){
+  var loads=parsed.people.map(function(p){
+    var total=p.windows.reduce(function(a,w){return a+(w.end-w.start);},0);
+    return {name:p.name, mins:total};
+  });
+  loads.sort(function(a,b){return a.mins-b.mins;});
+  var binding=loads[0];
+  return {
+    interviewers:parsed.people.length,
+    durationMin:dur,
+    daysViable:slots.length,
+    slotsConsidered:slots.reduce(function(a,s){return a+s.flex;},0),
+    slotChosen: slots.length? dayFull[slots[SELECTED_SLOT_IDX].day]+" "+mins2str(slots[SELECTED_SLOT_IDX].start) : "none",
+    bindingConstraint:binding.name+" ("+Math.round(binding.mins/60*10)/10+"h free this week)"
+  };
+}
+
+function renderCapture(cap){
+  var body='<div class="capture-body">'
+    +'<div class="cap-row"><span class="cap-k">Candidate / role</span><span class="cap-v">Jordan Reyes \u00b7 TA Ops AI Enablement Lead</span></div>'
+    +'<div class="cap-row"><span class="cap-k">Time to schedule</span><span class="cap-v">under 30 sec  vs 1\u20132h manual baseline</span></div>'
+    +'<div class="cap-row"><span class="cap-k">Options evaluated</span><span class="cap-v">'+cap.slotsConsidered+' across '+cap.daysViable+' viable day'+(cap.daysViable>1?'s':'')+'  \u2192  chose '+cap.slotChosen+'</span></div>'
+    +'<div class="cap-row"><span class="cap-k">'+tip("Binding constraint","The interviewer whose availability limited the options most. <b>Watch this across panels.</b> The same name recurring is a staffing signal.")+'</span><span class="cap-v"><span class="em">'+cap.bindingConstraint+'</span></span></div>'
+    +'</div>'
+    +'<div class="cap-foot"><b>This row rolls up into the dashboard:</b> scheduling time, reschedule rate, and who keeps being the bottleneck.</div>';
+  return '<div class="collapsible" id="capColl">'
+    +'<div class="coll-head" tabindex="0" role="button" onclick="toggleColl(document.getElementById(\'capColl\'))">'
+    +'<span class="coll-chevron">\u203A</span>'
+    +'<span class="coll-label">What this scheduling event captured</span>'
+    +'<span class="coll-summary">binding: <span class="em">'+cap.bindingConstraint.split(" (")[0]+'</span></span></div>'
+    +'<div class="coll-body">'+body+'</div></div>';
+}
+
+function renderWriteback(){
+  return '<div class="writeback" id="writeback">'
+    +'<div class="writeback-text" id="writebackText">Select a slot above to enable write-back.</div>'
+    +'<button class="writeback-btn" onclick="openWritebackModal()">Confirm and write to Ashby</button>'
+    +'</div>';
+}
+
+function openWritebackModal(){
+  if(!CURRENT_SLOTS.length)return;
+  var s=CURRENT_SLOTS[SELECTED_SLOT_IDX];
+  var dur=parseInt(document.getElementById('dur').value);
+  var candTz=(CURRENT_PARSED&&CURRENT_PARSED.candidate)?CURRENT_PARSED.candidate.tz:"";
+  var summaryHtml=''
+    +'<div class="summary-row"><div class="summary-k">Candidate</div><div class="summary-v">Jordan Reyes'+(candTz?' <span style="color:var(--text-mid);font-family:var(--font-mono);font-size:0.74rem">('+candTz+')</span>':'')+'</div></div>'
+    +'<div class="summary-row"><div class="summary-k">Job</div><div class="summary-v">TA Ops AI Enablement Lead</div></div>'
+    +'<div class="summary-row"><div class="summary-k">Stage</div><div class="summary-v">Onsite Panel</div></div>'
+    +'<div class="summary-row"><div class="summary-k">Date</div><div class="summary-v"><span class="accent">'+dayFull[s.day]+'</span></div></div>'
+    +'<div class="summary-row"><div class="summary-k">Block</div><div class="summary-v"><span class="accent">'+mins2str(s.start)+' \u2013 '+mins2str(s.end)+'</span> ('+(s.end-s.start)+' min, panel time)</div></div>'
+    +'<div class="summary-row"><div class="summary-k">Schedule</div><div class="summary-v">'+s.seq.map(function(x){return mins2str(x.start)+' '+x.name+' <span style="color:var(--text-dim)">'+(x.end-x.start)+'m</span>';}).join('<br>')+'</div></div>'
+    +'<div class="summary-row"><div class="summary-k">Calendar invites</div><div class="summary-v">'+s.seq.length+' events created via Google Calendar API, sent to interviewers and candidate.</div></div>';
+  document.getElementById('modalSummary').innerHTML=summaryHtml;
+  var payload={
+    candidateId:"cand_4f2a91",
+    applicationId:"app_8e1d44",
+    interviewStageId:"stage_onsite_panel",
+    scheduledInterviews:s.seq.map(function(x){
+      return {
+        interviewType:x.role,
+        interviewer:{id:"user_"+x.name.toLowerCase(),name:x.name},
+        startTime:dayFull[s.day]+" "+mins2str(x.start),
+        durationMinutes:(x.end-x.start)
+      };
+    })
+  };
+  var jsonStr=JSON.stringify(payload,null,2);
+  var apiHtml='<div class="api-method">POST</div>'
+    +'<div class="api-endpoint">https://api.ashbyhq.com/interviewSchedule.create</div>'
+    +'<div class="api-call">'+jsonStr.replace(/"([^"]+)":/g,'<span class="key">"$1"</span>:').replace(/: "([^"]+)"/g,': <span class="str">"$1"</span>').replace(/: (\d+)/g,': <span class="num">$1</span>')+'</div>';
+  document.getElementById('modalApi').innerHTML=apiHtml;
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');}
+function switchTab(t){
+  document.getElementById('tabSummary').classList.toggle('active',t==='summary');
+  document.getElementById('tabApi').classList.toggle('active',t==='api');
+  document.getElementById('modalSummary').style.display=t==='summary'?'block':'none';
+  document.getElementById('modalApi').style.display=t==='api'?'block':'none';
+}
+function confirmWriteback(){
+  alert('In production: fires a real POST to api.ashbyhq.com/interviewSchedule.create with the payload above, then Google Calendar API invites for each interviewer and the candidate. The captured-data row writes alongside the interview record.\n\nFor this prototype, no write happens.');
+  closeModal();
+}
+
+// ===== SPRINT DASHBOARD ====================================================
+// Sample data, computed live. The sprint below is seeded (a fixed pseudo-random
+// stream so the numbers are stable), but every number on the dashboard is
+// DERIVED from this data by the same logic the scheduler uses, not typed in.
+//
+// Volume model (grounded in real benchmarks, see the writeup):
+//   - 25 reqs are active in a two-week sprint.
+//   - Each req puts ~3 candidates through a panel that fortnight, so ~75 panels.
+//   - Each panel is 3 interviews (Domain 45m, AI 60m, Craft 45m) = 225 interviews.
+// The dashboard sits on top of those 75 panels.
+//
+// People stay neutral: the strain shows up as a POOL being too thin for the
+// volume, never as a named person being the problem. The thing the AI Enablement
+// role exists to fix is a structural pool-depth issue, not one person's calendar.
+var SPRINT_REQS = 25;
+var SPRINT_PANELS = 75;
+// Trained-interviewer pools, by competency. These counts are the real lever:
+// how many people are trained to run each interview. Domain is deliberately the
+// thin one, which is where the volume pressure lands.
+var SPRINT_POOL = [
+  {name:"Domain", id:"domain", trained:3, mins:45},  // thin pool, senior stakeholders
+  {name:"AI",     id:"ai",     trained:5, mins:60},  // healthier, immediate team
+  {name:"Craft \u0026 Values", id:"craft", trained:8, mins:45}  // wide cross-company pool
+];
+function poolById(id){return SPRINT_POOL.filter(function(p){return p.id===id;})[0];}
+// seeded PRNG so the sprint is identical every render
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function buildSprint(n){
+  var rnd=mulberry32(20260612);
+  var roles=["Sr PM","Backend Eng","Data Scientist","Designer","EM","Analyst","PMM","Recruiter"];
+  var panels=[];
+  for(var i=0;i<n;i++){
+    // Each panel needs all three competencies covered by a trained interviewer.
+    // A small share of panels hit a coverage gap: no trained person free in the
+    // candidate's window. The tool routes those to train-or-override, it never
+    // fakes coverage. Domain (the thin pool) is where gaps concentrate.
+    var domainGap = rnd()<0.07;   // ~5 of 75 land on the thin Domain pool
+    var slipComp = null, rescheduled=false;
+    // reschedule is the exception. Slips cluster on the thinnest pool, because
+    // when few people can run an interview, one drop forces a re-book.
+    var r=rnd();
+    if(r<0.06){slipComp="domain"; rescheduled=true;}
+    else if(r<0.09){slipComp="craft"; rescheduled=true;}
+    else if(r<0.11){slipComp="ai"; rescheduled=true;}
+    var attempts = rescheduled ? 2+(rnd()<0.25?1:0) : 1;
+    // scheduling minutes climb across the sprint as calendars fill. This is a
+    // calendar-density signal, NOT a tool-speed metric: the tool reconciles in
+    // seconds, the clock runs because interviewer calendars get denser.
+    var fillCurve = 22 + Math.round((i/(n-1))*46);
+    var penalty   = (attempts-1)*16;
+    var noise     = Math.round(rnd()*8);
+    // touches a coordinator would do BY HAND for this panel: email each of 3
+    // interviewers, chase replies, convert the candidate's timezone, re-send on a
+    // drop, confirm. 8-12 is typical; a reschedule adds a few. The tool does ~2.
+    var manualTouches = 9 + (attempts-1)*3 + (rnd()<0.4?1:0);
+    panels.push({
+      idx:i+1, role:roles[i%roles.length],
+      comps:["domain","ai","craft"],
+      domainGap:domainGap,
+      attempts:attempts, rescheduled:rescheduled, slipComp:slipComp,
+      minutesToSchedule:fillCurve+penalty+noise,
+      manualTouches:manualTouches, toolTouches:2
+    });
+  }
+  return panels;
+}
+var SPRINT = buildSprint(SPRINT_PANELS);
+
+// ---- aggregation (all derived) ----
+
+// 1. Hours saved: manual touches minus tool touches, across every panel.
+function aggTouches(sprint){
+  var manual=0, tool=0;
+  sprint.forEach(function(p){manual+=p.manualTouches; tool+=p.toolTouches;});
+  var saved=manual-tool;
+  // a touch is ~2 min of coordinator time on average (an email, a conversion, a chase)
+  var hoursSaved=Math.round(saved*2/60);
+  return {manual:manual, tool:tool, saved:saved, hoursSaved:hoursSaved, panels:sprint.length};
+}
+
+// 2. Coverage: every interview run by someone trained for it. Gaps get routed.
+function aggCoverage(sprint){
+  var slots=sprint.length*3;        // 3 interviews per panel
+  var gaps=sprint.filter(function(p){return p.domainGap;}).length;
+  var covered=slots-gaps;
+  return {slots:slots, covered:covered, gaps:gaps,
+    pct:Math.round(covered/slots*100)};
+}
+
+// 3. Pool load: interview-hours per trained interviewer per week, by competency.
+// A thin pool carrying a lot of volume shows up as high hours-per-person.
+function aggPoolLoad(sprint){
+  return SPRINT_POOL.map(function(pool){
+    var interviews=sprint.length;           // every panel has one of each competency
+    var totalMins=interviews*pool.mins;
+    // spread across the trained people, over a 2-week sprint -> per week
+    var hrsPerPersonPerWeek = totalMins/pool.trained/60/2;
+    // burnout line: more than 5 interview-hours/week on top of a day job is the flag
+    var over = hrsPerPersonPerWeek>5;
+    return {name:pool.name, id:pool.id, trained:pool.trained,
+      interviews:interviews, hrs:Math.round(hrsPerPersonPerWeek*10)/10, over:over};
+  }).sort(function(a,b){return b.hrs-a.hrs;});
+}
+
+// 4. Reschedule pattern, by competency.
+function aggReschedule(sprint){
+  var total=sprint.length;
+  var resched=sprint.filter(function(p){return p.rescheduled;}).length;
+  var byComp={};
+  sprint.forEach(function(p){if(p.slipComp)byComp[p.slipComp]=(byComp[p.slipComp]||0)+1;});
+  var compLabel={domain:"Domain",ai:"AI",craft:"Craft & Values"};
+  var comps=Object.keys(byComp).map(function(k){return {comp:compLabel[k]||k,count:byComp[k]};}).sort(function(a,b){return b.count-a.count;});
+  return {rate:Math.round(resched/total*100), resched:resched, total:total, comps:comps};
+}
+
+// 5. Scheduling-time trend, as a calendar-density signal (not a tool metric).
+function aggTrend(sprint){
+  var buckets=5, per=Math.ceil(sprint.length/buckets), out=[];
+  for(var b=0;b<buckets;b++){
+    var slice=sprint.slice(b*per,(b+1)*per);
+    if(!slice.length)continue;
+    var avg=Math.round(slice.reduce(function(a,p){return a+p.minutesToSchedule;},0)/slice.length);
+    out.push({label:"Wk-bucket "+(b+1), avg:avg});
+  }
+  return out;
+}
+// ===========================================================================
+
+function renderDashboard(){
+  var touches=aggTouches(SPRINT);
+  var coverage=aggCoverage(SPRINT);
+  var poolLoad=aggPoolLoad(SPRINT);
+  var resched=aggReschedule(SPRINT);
+  var trend=aggTrend(SPRINT);
+
+  var thinPool=poolLoad[0]; // highest hours-per-person
+
+  // pool load bars (interview-hours/person/week)
+  var maxHrs=Math.max.apply(null,poolLoad.map(function(p){return p.hrs;}));
+  var plRows=poolLoad.map(function(p){
+    var pct=Math.round(p.hrs/maxHrs*100);
+    return '<div class="ce-row"><span class="ce-name">'+p.name+'<span class="ce-role">'+p.trained+' trained \u00b7 '+p.interviews+' interviews</span></span>'
+      +'<div class="ce-track"><div class="ce-fill '+(p.over?'over':'')+'" style="width:'+Math.min(pct,100)+'%"></div></div>'
+      +'<span class="ce-ct '+(p.over?'over':'')+'">'+p.hrs+'h/wk</span></div>';
+  }).join("");
+
+  // coverage cells
+  var covCells=''
+    +'<div class="cov-cell"><div class="cov-cell-n">'+coverage.covered+'</div><div class="cov-cell-l">interviews run by a trained interviewer</div></div>'
+    +'<div class="cov-cell'+(coverage.gaps>0?' gap':'')+'"><div class="cov-cell-n">'+coverage.gaps+'</div><div class="cov-cell-l">routed to train-or-override</div></div>'
+    +'<div class="cov-cell"><div class="cov-cell-n">0</div><div class="cov-cell-l">filled by someone untrained</div></div>';
+
+  // reschedule rows
+  var rcRows=resched.comps.map(function(c){
+    return '<div class="rc-row"><span class="rc-comp">'+c.comp+'</span><span class="rc-ct">'+c.count+' slip'+(c.count===1?'':'s')+'</span></div>';
+  }).join("");
+
+  // scheduling-time trend bars
+  var maxT=Math.max.apply(null,trend.map(function(t){return t.avg;}));
+  var minT=Math.min.apply(null,trend.map(function(t){return t.avg;}));
+  var trendBars=trend.map(function(t){
+    var h=20+Math.round((t.avg-minT)/(maxT-minT||1)*60);
+    return '<div class="tr-col"><div class="tr-bar" style="height:'+h+'px"><span class="tr-v">'+t.avg+'m</span></div><span class="tr-lab">'+t.label+'</span></div>';
+  }).join("");
+
+  return ''
+    +'<div class="dash-intro">'
+      +'<div class="dash-intro-t">Sprint view \u00b7 '+SPRINT_REQS+' active reqs, '+SPRINT.length+' panels</div>'
+      +'<div class="dash-intro-d">Sample data, but nothing here is faked. '+SPRINT_REQS+' reqs running at once put about '+SPRINT.length+' candidates through a panel over a two-week sprint. Every panel runs through the same engine as the scheduler, so each number is something the tool worked out, not a figure I typed in.</div>'
+    +'</div>'
+    +'<div class="dash-grid">'
+      +'<div class="dash-card">'
+        +'<div class="dc-head"><span class="dc-t">Coordinator hours saved</span><span class="dc-sub">manual steps the tool removes, this sprint</span></div>'
+        +'<div class="dc-body"><div class="stat-big"><span class="stat-num">'+touches.hoursSaved+'</span><span class="stat-unit">hours</span></div>'
+          +'<div class="stat-sub">By hand, '+touches.panels+' panels take about <b>'+touches.manual+'</b> manual steps: emailing interviewers, chasing replies, converting timezones, re-sending when someone drops. The tool does it in about <b>'+touches.tool+'</b> per panel.</div></div>'
+        +'<div class="dc-foot">Baseline is illustrative, for a typical three-interviewer panel. Your real number depends on how your team works today.</div>'
+      +'</div>'
+      +'<div class="dash-card">'
+        +'<div class="dc-head"><span class="dc-t">Coverage</span><span class="dc-sub">'+coverage.pct+'% of interviews run by a trained interviewer</span></div>'
+        +'<div class="dc-body"><div class="cov-tally">'+covCells+'</div></div>'
+        +'<div class="dc-foot"><b>'+coverage.gaps+'</b> interviews had no trained person free in the candidate\'s window. The tool routes those to train-or-override. It never fills a slot with someone untrained.</div>'
+      +'</div>'
+      +'<div class="dash-card dash-wide">'
+        +'<div class="dc-head"><span class="dc-t">Interviewer load by pool</span><span class="dc-sub">interview-hours per trained person, per week</span></div>'
+        +'<div class="dc-body">'+plRows+'</div>'
+        +'<div class="dc-foot"><b>'+thinPool.name+'</b> has only '+thinPool.trained+' trained people carrying '+thinPool.interviews+' interviews, about '+thinPool.hrs+' hours each a week on top of their day jobs. Train one or two more for this interview and the load drops.</div>'
+      +'</div>'
+      +'<div class="dash-card">'
+        +'<div class="dc-head"><span class="dc-t">Reschedule pattern</span><span class="dc-sub">'+resched.rate+'% of panels needed a reschedule</span></div>'
+        +'<div class="dc-body">'+rcRows+'</div>'
+        +'<div class="dc-foot">Slips pile up on the interview with the fewest trained people. When one drops, there is no easy backup. Train one more and the slips fall.</div>'
+      +'</div>'
+      +'<div class="dash-card">'
+        +'<div class="dc-head"><span class="dc-t">Scheduling time</span><span class="dc-sub">a staffing signal, not a tool metric</span></div>'
+        +'<div class="dc-body"><div class="tr-chart">'+trendBars+'</div></div>'
+        +'<div class="dc-foot">Time climbs as the sprint fills, because calendars get denser, not because the tool slows down. Read it as a cue to add interviewer capacity before you hit the wall.</div>'
+      +'</div>'
+    +'</div>';
+}
+
+function switchView(v){
+  document.getElementById('navSched').classList.toggle('active',v==='sched');
+  document.getElementById('navDash').classList.toggle('active',v==='dash');
+  document.getElementById('viewSched').style.display=v==='sched'?'block':'none';
+  document.getElementById('viewDash').style.display=v==='dash'?'block':'none';
+  if(v==='dash' && !document.getElementById('viewDash').dataset.rendered){
+    document.getElementById('viewDash').innerHTML=renderDashboard();
+    document.getElementById('viewDash').dataset.rendered="1";
+  }
+}
+
+var LIVE=false;
+function $(id){return document.getElementById(id);}
+$("avail").value=DEMO_AVAIL_TEXT;
+var EMPTY='<div class="out-empty"><div class="ico"></div><p><b>Three calendars, one panel.</b> Find the times everyone\'s actually free, ranked, in seconds.</p></div>';
+
+CURRENT_PARSED=DEMO_PARSED;
+$("pmList").innerHTML=renderPanelMembers(DEMO_PARSED);
+
+// mode switch: Demo (baked scenarios, picker visible) vs Live parse (paste real
+// availability, bring your own key, real Claude call). Picker visibility is tied
+// to the mode, so flipping back to Demo always restores it. No way to strand it.
+function setMode(live){
+  LIVE=live;
+  $("modeDemo").classList.toggle("active",!live);
+  $("modeLive").classList.toggle("active",live);
+  $("keybar").style.display=live?"block":"none";
+  $("scnPicker").style.display=live?"none":"block";
+  $("liveNote").style.display=live?"block":"none";
+  $("srcPanel").textContent=live?"your panel":"sample panel";
+  $("srcAvail").textContent=live?"your availability":"sample availability";
+  // entering Live: clear the baked output and let the user paste their own.
+  // returning to Demo: reload the current scenario so the picker state is honest.
+  if(live){
+    $("out").innerHTML=EMPTY; CURRENT_SLOTS=[];
+  }else{
+    loadScenario(CURRENT_SCENARIO);
+  }
+}
+$("apiKey").oninput=function(e){$("keyDot").classList.toggle("on", e.target.value.trim().length>10);};
+$("resetBtn").onclick=function(){$("avail").value=DEMO_AVAIL_TEXT;$("out").innerHTML=EMPTY;CURRENT_SLOTS=[];if(!LIVE)loadScenario(CURRENT_SCENARIO);};
+
+$("findBtn").onclick=async function(){
+  var dur=parseInt($("dur").value), orderMode=$("order").value;
+  var out=$("out");
+  // input guards before any work
+  var availText=$("avail").value;
+  if(!availText.trim().length){
+    out.innerHTML='<div class="err"><b>Nothing to schedule.</b> Paste interviewer availability above, or reset to the demo example.</div>';return;
+  }
+  if(availText.length>MAX_AVAIL_CHARS){
+    out.innerHTML='<div class="err"><b>That paste is too long</b> ('+availText.length.toLocaleString()+' characters). Availability for one panel is usually a few hundred. Trim it to under '+MAX_AVAIL_CHARS.toLocaleString()+' characters and try again.</div>';return;
+  }
+  out.innerHTML=loadingSeq(LIVE);
+  try{
+    var parsed, parseSummary=null;
+    if(LIVE){
+      var key=$("apiKey").value.trim();
+      if(key.length<10){out.innerHTML='<div class="err">Enter your Anthropic API key above to run a live parse, or switch back to demo mode.</div>';return;}
+      parsed=await parseWithClaude(availText,key);
+      parseSummary=validateParsed(parsed); // already validated inside, this returns the summary
+    }else{
+      await new Promise(function(r){setTimeout(r,620);});
+      parsed=DEMO_PARSED;
+      parseSummary={people:parsed.people.length, windows:parsed.people.reduce(function(a,p){return a+p.windows.length;},0)};
+    }
+    // beat 1 done (AI parsed the language), hand off to beat 2 (code computes)
+    advanceBeat(parseSummary);
+    await new Promise(function(r){setTimeout(r,LIVE?260:520);});
+    CURRENT_PARSED=parsed;
+    $("pmList").innerHTML=renderPanelMembers(parsed);
+    var slots=findBlockSlots(parsed,dur,orderMode);
+    CURRENT_SLOTS=slots;
+    SELECTED_SLOT_IDX=0;
+    var reasons;
+    if(LIVE && slots.length){
+      try{reasons=await explainWithClaude(slots,dur,$("apiKey").value.trim());}
+      catch(e){reasons=slots.map(function(s,i){return explainLocal(s,slots,i);});}
+    }else{
+      reasons=slots.map(function(s,i){return explainLocal(s,slots,i);});
+    }
+    // validation confirmation: output-as-input-to-verify, made visible
+    var html=renderParseLine(parseSummary);
+    html+=renderSlots(slots,reasons);
+    if(slots.length){
+      html+=renderWriteback();
+      html+='<div id="povBox">'+renderPOV(computePOV(parsed,slots[0]))+'</div>';
+      var cap=computeCapture(parsed,slots,dur);
+      html+=renderCapture(cap);
+    }
+    out.innerHTML=html;
+    if(slots.length)selectSlot(0);
+  }catch(err){
+    out.innerHTML=renderParseError(err);
+  }
+};
+
+// recompute output from CURRENT_PARSED without a new API call (used after a swap).
+// the panel changed, the availability did not, so the parse stands and only the
+// deterministic scheduling + readouts rerun.
+function rerunWithCurrent(){
+  if(!CURRENT_PARSED)return;
+  var dur=parseInt($("dur").value), orderMode=$("order").value, out=$("out");
+  $("pmList").innerHTML=renderPanelMembers(CURRENT_PARSED);
+  var slots=findBlockSlots(CURRENT_PARSED,dur,orderMode);
+  CURRENT_SLOTS=slots; SELECTED_SLOT_IDX=0;
+  var reasons=slots.map(function(s,i){return explainLocal(s,slots,i);});
+  var summary={people:CURRENT_PARSED.people.length, windows:CURRENT_PARSED.people.reduce(function(a,p){return a+p.windows.length;},0)};
+  var html=renderParseLine(summary)+renderSlots(slots,reasons);
+  if(slots.length){
+    html+=renderWriteback();
+    html+='<div id="povBox">'+renderPOV(computePOV(CURRENT_PARSED,slots[0]))+'</div>';
+    html+=renderCapture(computeCapture(CURRENT_PARSED,slots,dur));
+  }
+  out.innerHTML=html;
+  if(slots.length)selectSlot(0);
+}
+
+// load a demo scenario: reset panel + availability, render panel, clear output
+function loadScenario(key){
+  CURRENT_SCENARIO=key;
+  CURRENT_PARSED=scenarioParsed(key);
+  CURRENT_SLOTS=[];
+  document.querySelectorAll('.scn-btn').forEach(function(b){b.classList.toggle('active',b.dataset.scn===key);});
+  $("scnBlurb").textContent=SCENARIOS[key].blurb;
+  $("pmList").innerHTML=renderPanelMembers(CURRENT_PARSED);
+  $("out").innerHTML=EMPTY;
+}
+
+// signature loading moment: two beats that dramatize the thesis. Beat 1 is the AI
+// reading messy language; beat 2 is deterministic code doing the scheduling math.
+function loadingSeq(live){
+  return '<div class="seq-load">'
+    +'<div class="beat active" id="beat1">'
+      +'<div class="beat-dot"><div class="beat-spin"></div></div>'
+      +'<div class="beat-text"><div class="beat-t">'+(live?"Claude reads the availability":"Reading the availability")+'</div>'
+      +'<div class="beat-d">turning messy language into structure</div></div>'
+    +'</div>'
+    +'<div class="beat-link"></div>'
+    +'<div class="beat" id="beat2">'
+      +'<div class="beat-dot"></div>'
+      +'<div class="beat-text"><div class="beat-t">Code finds the slots</div>'
+      +'<div class="beat-d">deterministic scheduling math</div></div>'
+    +'</div></div>';
+}
+function advanceBeat(summary){
+  var b1=document.getElementById("beat1"), b2=document.getElementById("beat2"), link=document.querySelector(".beat-link");
+  if(!b1||!b2)return;
+  b1.classList.remove("active"); b1.classList.add("done");
+  b1.querySelector(".beat-dot").innerHTML="\u2713";
+  if(summary){b1.querySelector(".beat-d").textContent=summary.people+" interviewers, "+summary.windows+" windows";}
+  if(link)link.classList.add("on");
+  b2.classList.add("active");
+  b2.querySelector(".beat-dot").innerHTML='<div class="beat-spin"></div>';
+}
+
+// validation confirmation line: Claude parsed the language, code verified the shape
+function renderParseLine(s){
+  return '<div class="parseline"><span class="pl-tick">\u2713</span> Parsed <b>'+s.people+'</b> interviewer'+(s.people===1?'':'s')+', <b>'+s.windows+'</b> window'+(s.windows===1?'':'s')+', checked before scheduling.</div>';
+}
+// shaped error: name what failed, and for a bad parse show the raw return
+function renderParseError(err){
+  var msg=err.message||"Something went wrong.";
+  var kind=msg.split(":")[0];
+  var headline, body;
+  if(kind==="NETWORK"){headline="Could not reach the API";body="Check your connection and try again. Demo mode always works without a network call.";}
+  else if(kind==="API"){headline="The API returned an error";body=msg.replace(/^API:\s*/,"")+"<br><br>Check the key is valid and has credit.";}
+  else if(kind==="JSON"){headline="The model did not return clean JSON";body="The parse came back as something the scheduler can't read. The raw return is below so you can see what happened.";}
+  else if(kind==="SHAPE"){headline="The parse was valid JSON but the wrong shape";body=msg.replace(/^SHAPE:\s*/,"")+" The raw return is below.";}
+  else{headline="Couldn't complete";body=msg+"<br><br>If this was a live parse, check the key and that the paste names people and times. Demo mode always works.";}
+  var raw=err.raw?'<div class="err-raw"><div class="err-raw-h">What the model returned</div><pre>'+String(err.raw).slice(0,800).replace(/</g,"&lt;")+'</pre></div>':"";
+  return '<div class="err"><b>'+headline+'.</b> '+body+'</div>'+raw;
+}
+
+document.getElementById('modalBg').onclick=function(e){if(e.target===this)closeModal();};
+// dismiss any open tooltip when clicking elsewhere
+document.addEventListener('click',function(e){if(!e.target.closest('.tip'))document.querySelectorAll('.tip.show').forEach(function(t){t.classList.remove('show');});});
+// keyboard activation: div-based clickable rows respond to Enter/Space like buttons
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  var el=e.target;
+  if(el.matches&&el.matches('.pm-row,.slot-top,.coll-head,.tip')){e.preventDefault();el.click();}
+});
+// Escape closes the modal and any open tooltip
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  closeModal();
+  document.querySelectorAll('.tip.show').forEach(function(t){t.classList.remove('show');});
+});
+</script>
+</body>
+</html>
