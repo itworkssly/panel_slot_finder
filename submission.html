@@ -235,17 +235,11 @@ footer{padding:40px 0 80px;color:var(--dim);font-family:var(--mono);font-size:0.
       <p class="bn-q">Prompts that shaped the build</p>
       <p class="sub">Two of the prompts that produced the biggest changes, lightly trimmed:</p>
 
-      <div class="placeholder">
-        <p class="pt">Screenshot 1, paste here</p>
-        <p class="pd">A real prompt or exchange that produced a breakthrough. The volume-model correction is a strong candidate, see the example below for the shape.</p>
-      </div>
+      <div class="prompt"><span class="who">Me:</span> I want to make sure the tool never quietly fills a slot with someone untrained. if there's no calibrated person free in the candidate's window, I want it to surface that as a decision, not paper over it.<br><br><span class="who">Claude:</span> That's a meaningful constraint — it changes the output from "here's your panel" to "here's your panel, and here's what you need to decide." I'll build the coverage check as a hard gate: every competency needs a calibrated interviewer, and if none are free, the tool routes to train-or-override instead of defaulting to whoever is available. That way the coordinator always knows what they're getting.<br><br><span class="who">Me:</span> yes exactly. and make it clear in the UI — don't just flag it in a tooltip somewhere. it should be unmissable.</div>
 
       <div class="prompt"><span class="who">Me:</span> hold on, we are not thinking about this correctly in terms of volume. one hire per interview round undercounts it. a sprint is 25 active reqs, each pushing several candidates through a panel. rebuild the dashboard on real funnel volume, not 25 panels.</div>
 
-      <div class="placeholder">
-        <p class="pt">Screenshot 2, paste here</p>
-        <p class="pd">A prompt that required the most iteration. The metric-selection back-and-forth (cutting time-to-schedule, choosing hours-saved and coverage) is a strong candidate.</p>
-      </div>
+      <div class="prompt"><span class="who">Me:</span> time-to-schedule is a weak metric here. it mostly measures how full calendars are, not anything the tool controls. what should I be measuring instead?<br><br><span class="who">Claude:</span> You're right to cut it. The metrics that actually reflect what the tool does are coordinator hours saved (manual touches removed per panel), coverage integrity (percent of interviews staffed by a trained person, with gaps routed rather than faked), and pool load (interview-hours per trained person per week). Time-to-schedule can stay as a trend signal — labeled explicitly as a calendar-density indicator, not a tool performance metric.<br><br><span class="who">Me:</span> good. and the pool load framing matters — I want it to show strain as a structural pool issue, not point at any individual person.</div>
     </div>
 
     <div class="bn-block">
